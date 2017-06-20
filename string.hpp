@@ -32,6 +32,7 @@ DEALINGS IN THE SOFTWARE.
 #define UTF8_FOR_CPP_CORE_H_2675DCD0_9480_4c0c_B92A_CC14C027B731
 
 #include <iterator>
+#include <cstring>
 
 namespace utf8
 {
@@ -597,7 +598,7 @@ namespace mush
             string& operator=(string&& other);
             string& operator=(const string& other);
             string operator+(const string& other) const;
-            string& operator+=(const string& other) const;
+            string& operator+=(const string& other);
 
             bool operator==(const string& other) const;
             bool operator!=(const string& other) const;
@@ -764,20 +765,22 @@ namespace mush
     {
         data.clear();
 
-        std::string result;
+        //std::string result;
 
-        utf8::replace_invalid(in, in + strlen(in), back_inserter(result));
-        utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
+        //utf8::replace_invalid(in, in + strlen(in), back_inserter(result));
+        //utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
+        utf8::utf8to32(in, in + strlen(in), back_inserter(data));
     }
     string::string(const unsigned char* in_unsigned)
     {
         data.clear();
 
-        std::string result;
+//        std::string result;
 
         const char* in = (const char*)in_unsigned;
-        utf8::replace_invalid(in, in + strlen(in), back_inserter(result));
-        utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
+//        utf8::replace_invalid(in, in + strlen(in), back_inserter(result));
+//        utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
+        utf8::utf8to32(in, in + strlen(in), back_inserter(data));
     }
    
     //! Create from character array, with length
@@ -790,10 +793,11 @@ namespace mush
     {
         data.clear();
 
-        std::string result;
+//        std::string result;
 
-        utf8::replace_invalid(in, in + length, back_inserter(result));
-        utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
+//        utf8::replace_invalid(in, in + length, back_inserter(result));
+//        utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
+        utf8::utf8to32(in, in + strlen(in), back_inserter(data));
     }
 
     
@@ -807,10 +811,11 @@ namespace mush
     {
         data.clear();
 
-        std::string result;
+//        std::string result;
 
-        utf8::replace_invalid(in.begin(), in.end(), back_inserter(result));
-        utf8::unchecked::utf8to32(result.begin(), result.end(), back_inserter(data));
+//        utf8::replace_invalid(in.begin(), in.end(), back_inserter(result));
+//        utf8::unchecked::utf8to32(result.begin(), result.end(), back_inserter(data));
+        utf8::utf8to32(in.begin(), in.end(), back_inserter(data));
     }
    
     //! Generate std::string
@@ -924,7 +929,7 @@ namespace mush
 
         \return <code>true</code> if string contains sequence.
     */
-    bool string::contains(const string& seq)
+    bool string::contains(const string& seq) const
     {
         if (this->length() < seq.length())
         return false;
@@ -977,12 +982,12 @@ namespace mush
     {
         if (this != &other)
         {
-            std::swap(data.other.data);
+            std::swap(data, other.data);
         }
 
         return *this;
     }
-   
+
     //! Concatenate (addition) operator
     /*!
         Allows concatenating strings together, may be used with

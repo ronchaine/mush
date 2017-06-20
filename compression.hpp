@@ -1,0 +1,13 @@
+#ifndef MUSH_COMPRESSION
+#define MUSH_COMPRESSION
+
+#include "buffer.hpp"
+
+#ifdef MUSH_MAKE_IMPLEMENTATIONS
+#define MUSH_IMPLEMENT_COMPRESSION
+#endif
+
+#ifdef MUSH_IMPLEMENT_COMPRESSION
+
+#endif
+#endif
