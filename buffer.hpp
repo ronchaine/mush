@@ -52,7 +52,7 @@ namespace mush
                 read_ptr = 0;
             }
 
-            size_t read_ptr;
+            mutable size_t read_ptr;
             inline const uint8_t* getptr() const { return &this->at(0); }
             inline size_t hash() const noexcept;
 
@@ -61,14 +61,14 @@ namespace mush
                 return std::string(this->begin(), this->end());
             }
 
-            Buffer read_until(const uint8_t delim)
+            Buffer read_until(const uint8_t delim) const
             {
                 Buffer rval;
                 uint8_t v;
                 while(read_ptr < size())
                 {
                     v = this->at(read_ptr);
-                    emplace_back(v);
+                    rval.emplace_back(v);
                     read_ptr++;
                     if (delim == v)
                         break;
