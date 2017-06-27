@@ -52,6 +52,7 @@ namespace mush
                 read_ptr = 0;
             }
 
+            // allow reading point to change even if the buffer is const
             mutable size_t read_ptr;
             inline const uint8_t* getptr() const { return &this->at(0); }
             inline size_t hash() const noexcept;
@@ -102,7 +103,7 @@ namespace mush
             }
 
             template <typename T>
-            inline T read()
+            inline T read() const
             {
                 T rval = *(T*)&(this->at(read_ptr));
 
@@ -126,7 +127,7 @@ namespace mush
             }
 
             template <typename T>
-            inline T read_le()
+            inline T read_le() const
             {
                 T rval = *(T*)&(this->at(read_ptr));
 
