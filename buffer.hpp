@@ -61,6 +61,21 @@ namespace mush
                 return std::string(this->begin(), this->end());
             }
 
+            Buffer read_until(const uint8_t delim)
+            {
+                Buffer rval;
+                uint8_t v;
+                while(read_ptr < size())
+                {
+                    v = this->at(read_ptr);
+                    emplace_back(v);
+                    read_ptr++;
+                    if (delim == v)
+                        break;
+                }
+                return rval;
+            };
+
             inline void from_stl_string(const std::string& s)
             {
                 this->clear();
