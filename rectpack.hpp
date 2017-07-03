@@ -13,7 +13,7 @@ namespace mush
     {
         public:
             uint32_t    flags;
-            int32_t     minsize;
+            uint32_t    minsize;
 
             std::deque<Rectangle> unused;
             std::deque<Rectangle> mapped;
@@ -32,9 +32,9 @@ namespace mush
                 {
                     if (overlap(r, r2))
                     {
-                        if (r.x < r2.x + r2.w && r.x + r.w > r2.x)
+                        if (r.x < (int32_t)(r2.x + r2.w) && (int32_t)(r.x + r.w) > r2.x)
                         {
-                            if (r.y > r2.y && r.y < r2.y + r2.h)
+                            if (r.y > r2.y && r.y < (int32_t)(r2.y + r2.h))
                             {
                                 temp = r2;
                                 temp.h = r.y - r2.y;
@@ -50,9 +50,9 @@ namespace mush
                                     unused.push_front(temp);
                             }
                         }
-                        if (r.y < r2.y + r2.h && r.y + r.h > r2.y)
+                        if (r.y < (int32_t)(r2.y + r2.h) && (int32_t)(r.y + r.h) > r2.y)
                         {
-                            if (r.x > r2.x && r.x < r2.x + r2.w)
+                            if (r.x > r2.x && r.x < (int32_t)(r2.x + r2.w))
                             {
                                 temp = r2;
                                 temp.w = r.x - r2.x;
