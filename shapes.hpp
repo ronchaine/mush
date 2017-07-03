@@ -132,7 +132,7 @@ namespace mush
 
     // make compile-time error if trying to use nonexistant overlap test
     template<Shape First, Shape Second>
-    bool overlap(First shape, Second shape2)
+    inline bool overlap(First shape, Second shape2)
     {
         static_assert(dependent_false<First>(), "overlap check for shapes requested not implemented");
         return false;
@@ -143,7 +143,7 @@ namespace mush
     struct as_cref { typedef typename std::add_lvalue_reference<typename std::add_const<T>::type>::type type; };
 
     // rectangle-rectangle overlap
-    bool overlap(typename as_cref<Rectangle>::type r1, typename as_cref<Rectangle>::type r2)
+    inline bool overlap(typename as_cref<Rectangle>::type r1, typename as_cref<Rectangle>::type r2)
     {
         int b1, b2, rg1, rg2;
         b1 = r1.y + r1.h;
@@ -164,14 +164,14 @@ namespace mush
 
     // make compile-time error if trying to use nonexistant containment test
     template<Shape First, Shape Second>
-    bool contains(First shape, Second shape2)
+    inline bool contains(First shape, Second shape2)
     {
         static_assert(dependent_false<First>(), "containment check for shapes requested not implemented");
         return false;
     }
  
     // rectangle containment, true iff first inside second
-    bool contains(typename as_cref<Rectangle>::type r2, typename as_cref<Rectangle>::type r1)
+    inline bool contains(typename as_cref<Rectangle>::type r2, typename as_cref<Rectangle>::type r1)
     {
         if ((r1.x >= r2.x) && (r1.x + r1.w <= r2.x + r2.w) && (r1.y >= r2.y) && (r1.y + r1.h <= r2.y + r2.h))
             return true;
