@@ -1,3 +1,5 @@
+#include <iostream>
+
 #ifndef MUSH_STRING_HEADER
 #define MUSH_STRING_HEADER
 
@@ -572,14 +574,29 @@ namespace mush
             string(const char*, size_t);
 
 
-            // This template works for
+            // This template SHOULD work for
             // any integer
             // float / double
             // string_view
             //
             // ...or anything that has to_string that return std::string
+            /*
             template <StringConvertable T>
             string(T value)
+            {
+                std::string result = std::to_string(value);
+                std::cout << "convert:" << value << ", result: " << result << "size: " << result.size() << "\n";
+                utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
+            }
+            */
+
+            string(IntegralType value)
+            {
+                std::string result = std::to_string(value);
+                utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
+            }
+            
+            string(FloatingType value)
             {
                 std::string result = std::to_string(value);
                 utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
@@ -811,10 +828,6 @@ namespace mush
     {
         data.clear();
 
-//        std::string result;
-
-//        utf8::replace_invalid(in.begin(), in.end(), back_inserter(result));
-//        utf8::unchecked::utf8to32(result.begin(), result.end(), back_inserter(data));
         utf8::utf8to32(in.begin(), in.end(), back_inserter(data));
     }
    

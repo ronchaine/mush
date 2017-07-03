@@ -1,7 +1,11 @@
+#define MUSH_MAKE_IMPLEMENTATIONS
+
 #include "image.hpp"
 #include "shapes.hpp"
 
 #include "checksum.hpp"
+
+#include "string.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -37,6 +41,12 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < 256; ++i)
         std::cout << mush::crc::table[i] << "\tvs\t" << crc_table[i] << "\tvs\t" << "\n";
+
+    int i = 5;
+
+    mush::string intstr = i;
+
+    std::cout << intstr << "\n";
 
     return 0;
 }
