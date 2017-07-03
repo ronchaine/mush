@@ -1,0 +1,7 @@
+#ifndef MUSH_BUFFERPARSER
+#define MUSH_BUFFERPARSER
+
+#ifdef MUSH_COMPRESSION
+#endif
+
+#endif
