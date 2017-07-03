@@ -102,9 +102,9 @@ namespace mush
                 return;
 
             x = *list.begin();
-            y = *list.begin()+1;
-            w = *list.begin()+2;
-            h = *list.begin()+3;
+            y = *(list.begin()+1);
+            w = *(list.begin()+2);
+            h = *(list.begin()+3);
         }
     };
     
