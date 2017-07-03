@@ -797,7 +797,7 @@ namespace mush
 
 //        utf8::replace_invalid(in, in + length, back_inserter(result));
 //        utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
-        utf8::utf8to32(in, in + strlen(in), back_inserter(data));
+        utf8::utf8to32(in, in + length, back_inserter(data));
     }
 
     
