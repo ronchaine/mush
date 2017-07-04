@@ -92,6 +92,23 @@ namespace mush
             };
 
             template <typename T>
+            inline T read_strval() const
+            {
+                Buffer val;
+                uint8_t v;
+                while (read_ptr < size())
+                {
+                    v = this->at(read_ptr);
+                    val.emplace_back(v);
+                    read_ptr++;
+                    if ((v >= '0') && (v <= '9'))
+                        continue;
+                    break;
+                }
+                return atoi(val.to_stl_string().c_str());
+            }
+            
+            template <typename T>
             inline T read(size_t where) const
             {
                 T rval = *(T*)&(this->at(where));
