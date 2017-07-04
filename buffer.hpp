@@ -207,7 +207,7 @@ namespace mush
                 return read_ptr;
             }
 
-            inline void seek(size_t target)
+            inline void seek(size_t target) const
             {
                 if (target < size()) read_ptr = target;
             }
