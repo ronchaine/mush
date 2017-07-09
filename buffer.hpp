@@ -6,6 +6,8 @@
 #include <cassert>
 #include <memory>
 
+#include <cstring>
+
 //#include "common.hpp"
 namespace mush
 {
@@ -124,6 +126,15 @@ namespace mush
 
             inline void replace(size_t loc, size_t len, const Buffer& src)
             {
+                // make sure the buffer is large enough
+                if (size() - loc < len)
+                    resize(loc + len);
+
+                // do not read more than we can
+                if (src.size() > len)
+                    len = src.size();
+
+                memcpy(data() + loc, src.data(), len);
             }
 
             template <typename T>

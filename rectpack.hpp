@@ -1,5 +1,3 @@
-#include <iostream>
-
 #ifndef MUSH_RECTPACK
 #define MUSH_RECTPACK
 
@@ -94,8 +92,7 @@ namespace mush
                         return rval;
                     }
                 }
-
-                std::cout << "no space\n";
+                
                 return rval;
             }
 
