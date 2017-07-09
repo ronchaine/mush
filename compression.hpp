@@ -71,7 +71,7 @@ namespace mush
             }
 
             const uint8_t* ip = (const uint8_t*) input;
-            const uint8_t* ip_limit = ip + length - MAX_COPY - 4;
+            const uint8_t* ip_limit = ip + length - mush::lzf::MAX_COPY - 4;
             uint8_t* op = (uint8_t*) output;
             const uint8_t* last_op = (uint8_t*) output + maxout - 1;
 
@@ -92,7 +92,7 @@ namespace mush
 
             /* we start with literal copy */
             copy = 0;
-            *op++ = MAX_COPY - 1;
+            *op++ = mush::lzf::MAX_COPY - 1;
 
             /* main loop */
             while (ip < ip_limit) {
@@ -120,7 +120,7 @@ namespace mush
                 distance = ip - ref;
 
                 /* skip if too far away */
-                if (distance >= MAX_DISTANCE)
+                if (distance >= mush::lzf::MAX_DISTANCE)
                     goto literal;
 
                 /* here we have 3-byte matches */
@@ -130,8 +130,8 @@ namespace mush
                 ip += 3;
 
                 /* now we have to check how long the match is */
-                if (ip < ip_limit - MAX_LEN) {
-                    while (len < MAX_LEN - 8) {
+                if (ip < ip_limit - mush::lzf::MAX_LEN) {
+                    while (len < mush::lzf::MAX_LEN - 8) {
                         /* unroll 8 times */
                         if (*ref++ != *ip++) break;
                         if (*ref++ != *ip++) break;
@@ -183,7 +183,7 @@ namespace mush
                 *op++ = (distance & 255);
 
                 /* assuming next will be literal copy */
-                *op++ = MAX_COPY - 1;
+                *op++ = mush::lzf::MAX_COPY - 1;
 
                 /* update the hash at match boundary */
                 --ip;
@@ -199,10 +199,10 @@ namespace mush
                 }
                 *op++ = *ip++;
                 ++copy;
-                if (copy >= MAX_COPY) {
+                if (copy >= mush::lzf::MAX_COPY) {
                     // start next literal copy item
                     copy = 0;
-                    *op++ = MAX_COPY - 1;
+                    *op++ = mush::lzf::MAX_COPY - 1;
                 }
             }
 
@@ -217,14 +217,14 @@ namespace mush
                 }
                 *op++ = *ip++;
                 ++copy;
-                if (copy == MAX_COPY) {
+                if (copy == mush::lzf::MAX_COPY) {
                     // start next literal copy item
                     copy = 0;
                     if (ip < ip_limit) {
                         if (op == last_op) {
                             return 0;
                         }
-                        *op++ = MAX_COPY - 1;
+                        *op++ = mush::lzf::MAX_COPY - 1;
                     } else {
                         // do not write possibly out of bounds
                         // just pretend we moved one more, for the final treatment
@@ -338,9 +338,9 @@ namespace mush
         output[4] = 1;
 
         uint32_t out_len = in_len - 1;
-        uint8_t* out_data = (uint8_t) output.data() + 5;
+        uint8_t* out_data = (uint8_t*)(output.data() + 5);
 
-        uint32_t len = compress(in_data, in_len, out_data, out_len);
+        uint32_t len = detail::compress(in_data, in_len, out_data, out_len);
 
         if ((len > out_len) || (len == 0))
         {
@@ -350,7 +350,7 @@ namespace mush
             output.resize(len + 5);
         }
 
-        output.shirnk_to_fit();
+        output.shrink_to_fit();
 
         return output;
     }
@@ -382,7 +382,7 @@ namespace mush
         if (flag == 0) {
             memcpy(output.data(), in_data, in_len);
         } else {
-            size_t len = decompress(in_data, in_len, out_data, out_len);
+            size_t len = detail::decompress(in_data, in_len, out_data, out_len);
             assert(len == out_len);
         }
 

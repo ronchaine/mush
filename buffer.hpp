@@ -100,14 +100,32 @@ namespace mush
                 {
                     v = this->at(read_ptr);
                     val.emplace_back(v);
-                    read_ptr++;
                     if ((v >= '0') && (v <= '9'))
+                    {
+                        read_ptr++;
                         continue;
+                    }
                     break;
                 }
                 return atoi(val.to_stl_string().c_str());
             }
-            
+
+            inline Buffer read_bytes(size_t len) const
+            {
+                Buffer rval;
+                if (size() - read_ptr < len)
+                    return rval;
+
+                rval.resize(len);
+                std::copy(data(), data() + len, back_inserter(rval));
+                read_ptr += len;
+                return rval;
+            }
+
+            inline void replace(size_t loc, size_t len, const Buffer& src)
+            {
+            }
+
             template <typename T>
             inline T read(size_t where) const
             {
