@@ -59,7 +59,7 @@ namespace mush
             inline const uint8_t* getptr() const { return &this->at(0); }
             inline size_t hash() const noexcept;
 
-            inline std::string to_stl_string() const
+            inline std::string to_string() const
             {
                 return std::string(this->begin(), this->end());
             }
@@ -109,7 +109,7 @@ namespace mush
                     }
                     break;
                 }
-                return atoi(val.to_stl_string().c_str());
+                return atoi(val.to_string().c_str());
             }
 
             inline Buffer read_bytes(size_t len) const
@@ -118,9 +118,9 @@ namespace mush
                 if (size() - read_ptr < len)
                     return rval;
 
-                rval.resize(len);
                 std::copy(data(), data() + len, back_inserter(rval));
                 read_ptr += len;
+
                 return rval;
             }
 
