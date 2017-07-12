@@ -266,7 +266,9 @@ namespace mush
                 if (ctrl < 33) {
                     /* literal copy */
                     if (op + ctrl > op_limit)
+                    {
                         return 0;
+                    }
 
                     /* crazy unrolling */
                     if (ctrl) {
@@ -298,10 +300,14 @@ namespace mush
                     ref -= *ip++;
 
                     if (op + len + 3 > op_limit)
+                    {
                         return 0;
+                    }
 
                     if (ref < (uint8_t *)output)
+                    {
                         return 0;
+                    }
 
                     *op++ = *ref++;
                     *op++ = *ref++;
@@ -358,7 +364,12 @@ namespace mush
     Buffer lzf::uncompress(const Buffer& input)
     {
         Buffer output;
+/*
+        std::cout << input.size() / 4 << "\n";
 
+        for (size_t i = 0; i < input.size(); ++i)
+            printf("%02x\n", input[i]);
+*/
         size_t unpacked_size = 0;
         unpacked_size |= ((uint8_t)input[0]);
         unpacked_size |= ((uint8_t)input[1]) << 8;
@@ -366,9 +377,7 @@ namespace mush
         unpacked_size |= ((uint8_t)input[3]) << 24;
 
         input.seek(0);
-        size_t unpacked = input.read_le<uint32_t>();
-
-        std::cout << unpacked_size << "==" << unpacked << "\n";
+        size_t unpacked = input.read<uint32_t>();
 
         output.resize(unpacked_size);
 
@@ -383,7 +392,8 @@ namespace mush
             memcpy(output.data(), in_data, in_len);
         } else {
             size_t len = detail::decompress(in_data, in_len, out_data, out_len);
-            assert(len == out_len);
+            assert(len != 0);
+            assert(unpacked == out_len);
         }
 
         return output;
