@@ -7,6 +7,7 @@
 #include <memory>
 
 #include <cstring>
+#include <fstream>
 
 //#include "common.hpp"
 namespace mush
@@ -258,6 +259,25 @@ namespace mush
                 if (target < size()) read_ptr = target;
             }
     };
+
+    Buffer file_to_buffer(const std::string& filename)
+    {
+        Buffer rval;
+        std::ifstream input(filename, std::ifstream::binary);
+        if (!input)
+            return rval;
+
+        size_t size;
+        input.seekg(0, input.end);
+        size = input.tellg();
+        input.seekg(0, input.beg);
+
+        rval.resize(size);
+        input.read((char*)(&rval[0]), size);
+        input.close();
+
+        return rval;
+    }
 
     template<>
     inline void Buffer::write(const Buffer& buf)
