@@ -3,6 +3,10 @@
 #ifndef MUSH_STRING_HEADER
 #define MUSH_STRING_HEADER
 
+#ifdef MUSH_MAKE_IMPLEMENTATIONS
+#define MUSH_IMPLEMENT_STRING
+#endif
+
 // utf8-stuff Copyright 2006 Nemanja Trifunovic
 
 /*
@@ -671,6 +675,11 @@ namespace mush
                 return out;
             }
 
+            friend inline string operator+(const char* left, const mush::string& right)
+            {
+                return mush::string(left) + right;
+            }
+
             // FVN-1a
             template<size_t SizeSize = sizeof(size_t)>
             inline size_t hash() const noexcept
@@ -731,10 +740,6 @@ namespace std
         }
     };
 }
-
-#ifdef MUSH_MAKE_IMPLEMENTATIONS
-#define MUSH_IMPLEMENT_STRING
-#endif
 
 #ifdef MUSH_IMPLEMENT_STRING
 
