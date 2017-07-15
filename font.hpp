@@ -197,6 +197,7 @@ namespace mush
             atlas.reset();
         }
     } font_info;
+    //std::unique_ptr<font_info_t> font_info = std::make_unique<font_info_t>();
 
     // return position in the bitmap
     mush::Rectangle Font_Base::get_glyph(char32_t glyph) const
