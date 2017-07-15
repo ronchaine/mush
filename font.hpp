@@ -183,11 +183,19 @@ namespace mush
     #endif
 
     // struct to hold font bitmap data and information about it
-    struct {
+    struct font_info_t {
         uint8_t data[MUSH_FONTBUFFER_SIZE][MUSH_FONTBUFFER_SIZE][MUSH_FONTBUFFER_CHANNELS];
 
         RectanglePack atlas;
         std::unordered_map<mush::string, Rectangle> stored;
+
+        font_info_t()
+        {
+            atlas.width = MUSH_FONTBUFFER_SIZE;
+            atlas.height = MUSH_FONTBUFFER_SIZE;
+
+            atlas.reset();
+        }
     } font_info;
 
     // return position in the bitmap
@@ -204,7 +212,7 @@ namespace mush
             std::cout << "trying to load multiple instances of '" << name << "'\n";
             return;
         }
-
+        
         mush::Rectangle r = font_info.atlas.fit(w, h);
 
         if (r == mush::Rectangle{0,0,0,0})
@@ -216,7 +224,7 @@ namespace mush
         for (int xwr = 0; xwr < r.x; ++xwr) for (int ywr = 0; ywr < r.y; ++ywr)
             for (int ch = 0; ch < MUSH_FONTBUFFER_CHANNELS; ++ch)
             {
-                font_info.data[r.x][r.y][ch] = *((uint8_t*)(data_ptr) + ch + ywr * MUSH_FONTBUFFER_CHANNELS + xwr * MUSH_FONTBUFFER_CHANNELS * r.h);
+                font_info.data[r.x][r.y][ch] = *((uint8_t*)(data_ptr) + ywr * MUSH_FONTBUFFER_CHANNELS + xwr * MUSH_FONTBUFFER_CHANNELS * r.h);
             }
     }
 
