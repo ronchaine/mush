@@ -1,3 +1,5 @@
+#include <iostream>
+
 #ifndef MUSH_BUFFER
 #define MUSH_BUFFER
 
@@ -46,6 +48,16 @@ namespace mush
 
         return true;
     }
+
+    template <typename T>
+    concept bool PODType = std::is_pod<T>::value;
+
+    template <typename T> struct remove_cr              { typedef T type; };
+    template <typename T> struct remove_cr<T&>          { typedef T type; };
+    template <typename T> struct remove_cr<T&&>         { typedef T type; };
+    template <typename T> struct remove_cr<const T>     { typedef T type; };
+    template <typename T> struct remove_cr<const T&>    { typedef T type; };
+    template <typename T> struct remove_cr<const T&&>   { typedef T type; };
 
     class Buffer : public std::vector<uint8_t>
     {
@@ -154,14 +166,17 @@ namespace mush
             {
                 T rval = *(T*)&(this->at(read_ptr));
 
-                if (big_endian())
-                rval = endian_swap(rval);
+                if constexpr (std::is_pod<T>::value)
+                {
+                    if (big_endian())
+                    rval = endian_swap(rval);
+                }
 
                 read_ptr += sizeof(T);
 
                 return rval;
             }
-
+            
             template <typename T>
             inline T read_le(size_t where) const
             {
@@ -186,14 +201,21 @@ namespace mush
                 return rval;
             }
 
-
             template <typename T>
             inline void write(const T& data)
             {
-                this->reserve(this->size() + sizeof(T));
+                size_t start = size();
+                this->resize(size() + sizeof(T));
+                memcpy(this->data() + start, &data, sizeof(T)); 
+            }
+
+            #ifndef NO_CONCEPTS
+            inline void write(const PODType& data)
+            {
+                this->reserve(this->size() + sizeof(data));
 
                 uint8_t* dataptr = nullptr;
-                T t_val;
+                typename remove_cr<decltype(data)>::type t_val;
 
                 if (big_endian())
                 {
@@ -203,9 +225,11 @@ namespace mush
                     dataptr = (uint8_t*)&data;
                 }
 
-                for (size_t it = 0; it < sizeof(T); ++it)
+                for (size_t it = 0; it < sizeof(data); ++it)
                     this->push_back(*(dataptr+it));
             }
+            #endif
+
 
             template <typename T>
             inline void write_le(const T& data)
@@ -227,9 +251,8 @@ namespace mush
                     this->push_back(*(dataptr+it));
             }
 
-            inline void write_byte()
-            {
-            }
+            // make no-op 
+            inline void write_byte() {}
 
             template <typename T>
             inline void write_byte(uint8_t byte)
@@ -260,7 +283,7 @@ namespace mush
             }
     };
 
-    Buffer file_to_buffer(const std::string& filename)
+    inline Buffer file_to_buffer(const std::string& filename)
     {
         Buffer rval;
         std::ifstream input(filename, std::ifstream::binary);
