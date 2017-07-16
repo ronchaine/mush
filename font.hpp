@@ -57,8 +57,7 @@ namespace mush
             Font_Base(const mush::string& prefix) : prefix(prefix) {}
 
         public:
-            template <typename T>
-            const T* data() { return (T*)&data; }
+            const void* data() const;
 
             const mush::string prefix;
 
@@ -72,6 +71,10 @@ namespace mush
             virtual mush::Rectangle get_glyph(char32_t glyph) const;
 
             inline void update_cache(const mush::string& name, uint32_t w, uint32_t h, void* data);
+
+            inline size_t get_fontbuffer_size() const;
+            inline size_t get_fontbuffer_channels() const;
+
             virtual ~Font_Base() {}
     };
 
@@ -203,6 +206,20 @@ namespace mush
     mush::Rectangle Font_Base::get_glyph(char32_t glyph) const
     {
         return font_info.stored[prefix + glyph];
+    }
+    
+    inline size_t Font_Base::get_fontbuffer_size() const
+    {
+        return MUSH_FONTBUFFER_SIZE;
+    }
+    inline size_t Font_Base::get_fontbuffer_channels() const
+    {
+        return MUSH_FONTBUFFER_CHANNELS;
+    }
+            
+    const void* Font_Base::data() const
+    {
+        return font_info.data;
     }
 
     // add to bitmap data
