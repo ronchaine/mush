@@ -52,12 +52,15 @@ namespace mush
     template <typename T>
     concept bool PODType = std::is_pod<T>::value;
 
+    #ifndef MUSH_INTERNAL_REMOVE_CR
+    #define MUSH_INTERNAL_REMOVE_CR
     template <typename T> struct remove_cr              { typedef T type; };
     template <typename T> struct remove_cr<T&>          { typedef T type; };
     template <typename T> struct remove_cr<T&&>         { typedef T type; };
     template <typename T> struct remove_cr<const T>     { typedef T type; };
     template <typename T> struct remove_cr<const T&>    { typedef T type; };
     template <typename T> struct remove_cr<const T&&>   { typedef T type; };
+    #endif
 
     class Buffer : public std::vector<uint8_t>
     {
