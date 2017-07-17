@@ -48,30 +48,49 @@ namespace mush
     constexpr FontType BITMAP_FONT      = 0x02;
     
     template <FontType T> struct dependent_false { static constexpr bool value = false; };
-    
+
+    struct GlyphMetrics
+    {
+        int32_t advance;
+        int32_t vertical_advance;
+        int32_t left;
+        int32_t width;
+        int32_t top;
+        int32_t height;
+    };
+
     class Font_Base
     {
         protected:
             Font_Base(const mush::string& prefix) : prefix(prefix) {}
+            std::unordered_map<char32_t, GlyphMetrics> metrics;
 
         public:
-            const void* data() const;
 
             const mush::string prefix;
+            
+            virtual mush::Rectangle get_glyph(char32_t glyph) const;
+            GlyphMetrics get_metrics(char32_t glyph)
+            {
+                if (metrics.count(glyph) == 0)
+                {
+                    GlyphMetrics empty;
+                    return empty;
+                }
 
-            virtual int32_t get_advance(char32_t glyph) { return 0; }
-            virtual int32_t get_advance_vertical(char32_t glyph) { return 0; }
-            virtual bool prepare_glyph(char32_t glyph) const { return true; }
+                return metrics[glyph];
+            }
 
             virtual float next_line() const { return 0; }
-            virtual bool atlas_glyph(char32_t glyph) const { return false; }
-
-            virtual mush::Rectangle get_glyph(char32_t glyph) const;
 
             inline void update_cache(const mush::string& name, uint32_t w, uint32_t h, void* data);
 
             inline size_t get_fontbuffer_size() const;
             inline size_t get_fontbuffer_channels() const;
+
+            virtual void load_glyph(char32_t c) { return; }
+
+            const void* data() const;
 
             virtual ~Font_Base() {}
     };
@@ -98,6 +117,36 @@ namespace mush
             FT_Face face;
         
         public:
+            void load_glyph(char32_t c)
+            {
+                if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT))
+                    return;
+
+                GlyphMetrics m;
+                // Fill in metrics TODO: Vertical Advance
+                m.advance = face->glyph->advance.x >> 6;
+                m.vertical_advance = 0;
+                m.left = face->glyph->bitmap_left;
+                m.top = face->glyph->bitmap_top;
+                m.width = face->glyph->bitmap.width;
+                m.height = face->glyph->bitmap.rows;
+
+                metrics[c] = m;
+
+                uint32_t ft_w, ft_h;
+                
+                // Flip the Y-axis.  Useful for OpenGL
+                ft_w = face->glyph->bitmap.width;
+                ft_h = face->glyph->bitmap.rows;
+
+                uint8_t remap[ft_h][ft_w];
+
+                for (uint32_t i = 0; i < ft_w; ++i) for (uint32_t j = 0; j < ft_h; ++j)
+                    remap[ft_h - j - 1][i] = *(face->glyph->bitmap.buffer + j * ft_w + i);
+                
+                update_cache(prefix + c, ft_w, ft_h, remap);
+            }
+
             Font(const mush::string& name,
                  const mush::Buffer& data,
                  uint32_t size,
@@ -119,24 +168,10 @@ namespace mush
                 FT_Select_Charmap(face, ft_encoding_unicode);
                 FT_Set_Pixel_Sizes(face, 0, size);
 
-                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz.,!?1234567890+-=";
+                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz.,!?1234567890+-=:;";
 
-                uint32_t ft_w, ft_h;
                 for (char32_t c : precache)
-                {
-                    if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT))
-                        continue;
-
-                    ft_w = face->glyph->bitmap.width;
-                    ft_h = face->glyph->bitmap.rows;
-
-                    uint8_t remap[ft_h][ft_w];
-
-                    for (uint32_t i = 0; i < ft_w; ++i) for (uint32_t j = 0; j < ft_h; ++j)
-                        remap[ft_h - j - 1][i] = *(face->glyph->bitmap.buffer + j * ft_w + i);
-                    
-                    update_cache(prefix + c, ft_w, ft_h, remap);
-                }
+                    load_glyph(c);
             }
 
            ~Font()
@@ -152,6 +187,13 @@ namespace mush
             {
                 return line_spacing * face->height / 64.0f;
             }
+
+            int32_t get_advance(char32_t glyph)
+            {
+                return face->glyph->advance.x >> 6;
+            }
+    
+            mush::Rectangle glyph_metrics(char32_t glyph) const;
     };
     #endif
     
@@ -181,6 +223,17 @@ namespace mush
     #ifdef MUSH_FREETYPE_FONTS
     FT_Library Font<FREETYPE_FONT>::library;
     uint32_t Font<FREETYPE_FONT>::l_count;
+            
+    mush::Rectangle Font<FREETYPE_FONT>::glyph_metrics(char32_t glyph) const
+    {
+        mush::Rectangle rval;
+        rval.x =  face->glyph->bitmap_left;
+        rval.y = -face->glyph->bitmap.rows + face->glyph->bitmap_top;
+        rval.w =  face->glyph->bitmap.width;
+        rval.h =  face->glyph->bitmap.rows;
+        return rval;
+    }
+
     #endif
 
     // struct to hold font bitmap data and information about it
@@ -205,7 +258,7 @@ namespace mush
     {
         return font_info.stored[prefix + glyph];
     }
-    
+ 
     inline size_t Font_Base::get_fontbuffer_size() const
     {
         return MUSH_FONTBUFFER_SIZE;
