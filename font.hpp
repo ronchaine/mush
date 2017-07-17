@@ -1,5 +1,3 @@
-#include <iostream>
-
 // additional configuration defines:
 //
 // for header-only AND implementation (you should probably use compiler flag i.e. -DMUSH_FREETYPE_FONTS)
@@ -136,7 +134,7 @@ namespace mush
 
                     for (uint32_t i = 0; i < ft_w; ++i) for (uint32_t j = 0; j < ft_h; ++j)
                         remap[ft_h - j - 1][i] = *(face->glyph->bitmap.buffer + j * ft_w + i);
-
+                    
                     update_cache(prefix + c, ft_w, ft_h, remap);
                 }
             }
@@ -227,7 +225,7 @@ namespace mush
     {
         if (font_info.stored.count(name) != 0)
         {
-            std::cout << "trying to load multiple instances of '" << name << "'\n";
+//            std::cout << "trying to load multiple instances of '" << name << "'\n";
             return;
         }
         
@@ -239,11 +237,16 @@ namespace mush
         font_info.atlas.prune(r);
         font_info.stored[name] = r;
 
-        for (int xwr = 0; xwr < r.x; ++xwr) for (int ywr = 0; ywr < r.y; ++ywr)
-            for (int ch = 0; ch < MUSH_FONTBUFFER_CHANNELS; ++ch)
+        if constexpr(MUSH_FONTBUFFER_CHANNELS == 4)
+        {
+            for (uint32_t xwr = 0; xwr < r.w; ++xwr) for (uint32_t ywr = 0; ywr < r.h; ++ywr)
             {
-                font_info.data[r.x][r.y][ch] = *((uint8_t*)(data_ptr) + ywr * MUSH_FONTBUFFER_CHANNELS + xwr * MUSH_FONTBUFFER_CHANNELS * r.h);
+                font_info.data[r.y + ywr][r.x + xwr][0] = 0xff;
+                font_info.data[r.y + ywr][r.x + xwr][1] = 0xff;
+                font_info.data[r.y + ywr][r.x + xwr][2] = 0xff;
+                font_info.data[r.y + ywr][r.x + xwr][3] = *((uint8_t*)(data_ptr) + xwr + ywr * r.w);
             }
+        }
     }
 
     #endif
