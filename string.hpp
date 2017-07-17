@@ -563,6 +563,13 @@ namespace mush
             std::vector<char32_t> data;
 
         public:
+            typedef char32_t        value_type;
+            typedef char32_t&       reference;
+            typedef const char32_t& const_reference;
+            typedef char32_t*       pointer;
+            typedef const char32_t* const_pointer;
+            typedef size_t          size_type;
+
             // Constructors
             string();
 
@@ -612,7 +619,7 @@ namespace mush
             // STL compatibility
             std::vector<char32_t>::iterator begin() { return data.begin(); }
             std::vector<char32_t>::const_iterator begin() const { return data.begin(); }
-            std::vector<char32_t>::iterator end() { return data.begin(); }
+            std::vector<char32_t>::iterator end() { return data.end(); }
             std::vector<char32_t>::const_iterator end() const { return data.end(); }
 
             // Operator overloads
@@ -1083,6 +1090,19 @@ namespace mush
 
         return true;
     }
+
+    #ifndef MUSH_INTERNAL_REMOVE_CR
+    #define MUSH_INTERNAL_REMOVE_CR
+    template <typename T> struct remove_cr              { typedef T type; };
+    template <typename T> struct remove_cr<T&>          { typedef T type; };
+    template <typename T> struct remove_cr<T&&>         { typedef T type; };
+    template <typename T> struct remove_cr<const T>     { typedef T type; };
+    template <typename T> struct remove_cr<const T&>    { typedef T type; };
+    template <typename T> struct remove_cr<const T&&>   { typedef T type; };
+    #endif
+
+    template <typename T>
+    concept bool AnyString = std::is_same<typename remove_cr<T>::type, mush::string>::value;
 }
 
 #endif
