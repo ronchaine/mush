@@ -60,6 +60,7 @@ namespace mush
         int32_t vertical_advance;
     };
 
+    // Common base for all font types
     class Font_Base
     {
         protected:
@@ -114,90 +115,14 @@ namespace mush
         private:
             static FT_Library library;
             static uint32_t l_count;
+            
+            static FT_Face face;
 
-            FT_Face face;
-        
         public:
-            bool load_glyph(char32_t c)
-            {
-                assert(face);
-
-                if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT))
-                {
-                    std::cout << "Can't load glyph '" << mush::string(c) << "'!\n";
-                    return false;
-                }
-
-                GlyphMetrics m;
-                // Fill in metrics TODO: Vertical Advance
-                m.advance = face->glyph->advance.x >> 6;
-                m.vertical_advance = 0;
-                m.left = face->glyph->bitmap_left;
-                m.top = face->glyph->bitmap_top;
-                m.width = face->glyph->bitmap.width;
-                m.height = face->glyph->bitmap.rows;
-
-                metrics[c] = m;
-
-                uint32_t ft_w, ft_h;
-                
-                // Flip the Y-axis.  Useful for OpenGL
-                ft_w = face->glyph->bitmap.width;
-                ft_h = face->glyph->bitmap.rows;
-
-                std::cout << "loading glyph '" << mush::string(c) << "': " << ft_w << "x" << ft_h << "\n";
-
-                uint8_t remap[ft_h][ft_w];
-
-                for (uint32_t i = 0; i < ft_w; ++i) for (uint32_t j = 0; j < ft_h; ++j)
-                    remap[ft_h - j - 1][i] = *(face->glyph->bitmap.buffer + j * ft_w + i);
-                
-                update_cache(prefix + c, ft_w, ft_h, remap);
-
-                return true;
-            }
-
-            Font(const mush::string& name,
-                 const mush::Buffer& data,
-                 uint32_t size)
-            : Font_Base("freetype/" + name + "/" + size, size)
-            {
-                if (l_count == 0)
-                {
-                    if (FT_Init_FreeType(&library))
-                        assert(0 && "FreeType Init failed");
-                }
-
-                // add to refcounter
-                l_count++;
-
-                if (FT_New_Memory_Face(library, &data[0], data.size(), 0, &face))
-                    assert(0 && "Freetype error: couldn't create new face from memory buffer");
-
-                FT_Select_Charmap(face, ft_encoding_unicode);
-                FT_Set_Pixel_Sizes(face, 0, size);
-
-                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'#д";
-//                const mush::string precache = "A";
-                
-                line_spacing = (face->height >> 6);
-                
-                FT_Load_Char(face, ' ', FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
-                space_len = face->glyph->advance.x >> 6;
-
-                for (char32_t c : precache)
-                    load_glyph(c);
-
-            }
-
-           ~Font()
-            {
-                FT_Done_Face(face);
-
-                l_count--;
-                if (l_count == 0)
-                    FT_Done_FreeType(library);
-            }
+            bool load_glyph(char32_t c);
+            
+            Font(const mush::string& name, const mush::Buffer& data, uint32_t size);
+           ~Font();
 
             mush::Rectangle glyph_metrics(char32_t glyph) const;
     };
@@ -245,8 +170,9 @@ namespace mush
     // FREETYPE FONT IMPLEMENTATION SPECIFICS
     #ifdef MUSH_FREETYPE_FONTS
     FT_Library Font<FREETYPE_FONT>::library;
+    FT_Face Font<FREETYPE_FONT>::face;
     uint32_t Font<FREETYPE_FONT>::l_count;
-            
+
     mush::Rectangle Font<FREETYPE_FONT>::glyph_metrics(char32_t glyph) const
     {
         mush::Rectangle rval;
@@ -255,6 +181,87 @@ namespace mush
         rval.w =  face->glyph->bitmap.width;
         rval.h =  face->glyph->bitmap.rows;
         return rval;
+    }
+    
+    Font<FREETYPE_FONT>::Font(const mush::string& name,
+         const mush::Buffer& data,
+         uint32_t size)
+    : Font_Base("freetype/" + name + "/" + size, size)
+    {
+        if (l_count == 0)
+        {
+            if (FT_Init_FreeType(&library))
+                assert(0 && "FreeType Init failed");
+        }
+
+        // add to refcounter
+        l_count++;
+
+        if (FT_New_Memory_Face(library, &data[0], data.size(), 0, &face))
+            assert(0 && "Freetype error: couldn't create new face from memory buffer");
+
+        FT_Select_Charmap(face, ft_encoding_unicode);
+        FT_Set_Pixel_Sizes(face, 0, size);
+
+        const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'#дажай";
+//                const mush::string precache = "A";
+        
+        line_spacing = (face->height >> 6);
+        
+        FT_Load_Char(face, ' ', FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
+        space_len = face->glyph->advance.x >> 6;
+
+        for (char32_t c : precache)
+            load_glyph(c);
+
+    }
+
+    Font<FREETYPE_FONT>::~Font()
+    {
+        FT_Done_Face(face);
+
+        l_count--;
+        if (l_count == 0)
+            FT_Done_FreeType(library);
+    }
+
+    bool Font<FREETYPE_FONT>::load_glyph(char32_t c)  
+    {
+        assert(face);
+
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT))
+        {
+            std::cout << "Can't load glyph '" << mush::string(c) << "'!\n";
+            return false;
+        }
+
+        GlyphMetrics m;
+        // Fill in metrics TODO: Vertical Advance
+        m.advance = face->glyph->advance.x >> 6;
+        m.vertical_advance = 0;
+        m.left = face->glyph->bitmap_left;
+        m.top = face->glyph->bitmap_top;
+        m.width = face->glyph->bitmap.width;
+        m.height = face->glyph->bitmap.rows;
+
+        metrics[c] = m;
+
+        uint32_t ft_w, ft_h;
+        
+        // Flip the Y-axis.  Useful for OpenGL
+        ft_w = face->glyph->bitmap.width;
+        ft_h = face->glyph->bitmap.rows;
+
+//        std::cout << "loading glyph '" << mush::string(c) << "': " << ft_w << "x" << ft_h << "\n";
+
+        uint8_t remap[ft_h][ft_w];
+
+        for (uint32_t i = 0; i < ft_w; ++i) for (uint32_t j = 0; j < ft_h; ++j)
+            remap[ft_h - j - 1][i] = *(face->glyph->bitmap.buffer + j * ft_w + i);
+        
+        update_cache(prefix + c, ft_w, ft_h, remap);
+
+        return true;
     }
 
     #endif
