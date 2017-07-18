@@ -90,7 +90,8 @@ namespace mush
             inline size_t get_fontbuffer_size() const;
             inline size_t get_fontbuffer_channels() const;
 
-            virtual void load_glyph(char32_t c) { return; }
+            bool has_glyph(char32_t c);
+            virtual bool load_glyph(char32_t c) { return false; }
 
             const void* data() const;
 
@@ -117,10 +118,10 @@ namespace mush
             FT_Face face;
         
         public:
-            void load_glyph(char32_t c)
+            bool load_glyph(char32_t c)
             {
                 if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT))
-                    return;
+                    return false;
 
                 GlyphMetrics m;
                 // Fill in metrics TODO: Vertical Advance
@@ -145,6 +146,8 @@ namespace mush
                     remap[ft_h - j - 1][i] = *(face->glyph->bitmap.buffer + j * ft_w + i);
                 
                 update_cache(prefix + c, ft_w, ft_h, remap);
+
+                return true;
             }
 
             Font(const mush::string& name,
@@ -167,7 +170,8 @@ namespace mush
                 FT_Select_Charmap(face, ft_encoding_unicode);
                 FT_Set_Pixel_Sizes(face, 0, size);
 
-                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz.,!?1234567890+-=:;'";
+//                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz.,!?1234567890+-=:;'";
+                const mush::string precache = "A";
                 
                 line_spacing = (face->height >> 6);
                 
@@ -214,6 +218,23 @@ namespace mush
 
     #ifdef MUSH_IMPLEMENT_FONT
 
+    // struct to hold font bitmap data and information about it
+    struct font_info_t {
+        uint8_t data[MUSH_FONTBUFFER_SIZE][MUSH_FONTBUFFER_SIZE][MUSH_FONTBUFFER_CHANNELS];
+
+        RectanglePack atlas;
+        std::unordered_map<mush::string, Rectangle> stored;
+
+        font_info_t()
+        {
+            atlas.width = MUSH_FONTBUFFER_SIZE;
+            atlas.height = MUSH_FONTBUFFER_SIZE;
+
+            atlas.reset();
+        }
+    } font_info;
+
+    // FREETYPE FONT IMPLEMENTATION SPECIFICS
     #ifdef MUSH_FREETYPE_FONTS
     FT_Library Font<FREETYPE_FONT>::library;
     uint32_t Font<FREETYPE_FONT>::l_count;
@@ -230,21 +251,14 @@ namespace mush
 
     #endif
 
-    // struct to hold font bitmap data and information about it
-    struct font_info_t {
-        uint8_t data[MUSH_FONTBUFFER_SIZE][MUSH_FONTBUFFER_SIZE][MUSH_FONTBUFFER_CHANNELS];
+    // check if a glyph is available
+    bool Font_Base::has_glyph(char32_t c)
+    {
+        if (font_info.stored.count(prefix + c) == 0)
+            return false;
 
-        RectanglePack atlas;
-        std::unordered_map<mush::string, Rectangle> stored;
-
-        font_info_t()
-        {
-            atlas.width = MUSH_FONTBUFFER_SIZE;
-            atlas.height = MUSH_FONTBUFFER_SIZE;
-
-            atlas.reset();
-        }
-    } font_info;
+        return true;
+    }
 
     // return position in the bitmap
     mush::Rectangle Font_Base::get_glyph(char32_t glyph) const
