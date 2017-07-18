@@ -51,23 +51,27 @@ namespace mush
 
     struct GlyphMetrics
     {
-        int32_t advance;
-        int32_t vertical_advance;
         int32_t left;
         int32_t width;
         int32_t top;
         int32_t height;
+        
+        int32_t advance;
+        int32_t vertical_advance;
     };
 
     class Font_Base
     {
         protected:
-            Font_Base(const mush::string& prefix) : prefix(prefix) {}
+            Font_Base(const mush::string& prefix, uint32_t size) : prefix(prefix), pixel_size(size){}
             std::unordered_map<char32_t, GlyphMetrics> metrics;
 
         public:
+            int32_t line_spacing;
+            int32_t space_len;
 
             const mush::string prefix;
+            const uint32_t pixel_size;
             
             virtual mush::Rectangle get_glyph(char32_t glyph) const;
             GlyphMetrics get_metrics(char32_t glyph)
@@ -80,8 +84,6 @@ namespace mush
 
                 return metrics[glyph];
             }
-
-            virtual float next_line() const { return 0; }
 
             inline void update_cache(const mush::string& name, uint32_t w, uint32_t h, void* data);
 
@@ -111,8 +113,6 @@ namespace mush
         private:
             static FT_Library library;
             static uint32_t l_count;
-
-            const float line_spacing;
 
             FT_Face face;
         
@@ -149,9 +149,8 @@ namespace mush
 
             Font(const mush::string& name,
                  const mush::Buffer& data,
-                 uint32_t size,
-                 float line_spacing = 1.0f)
-            : Font_Base("freetype/" + name + "/" + size), line_spacing(line_spacing)
+                 uint32_t size)
+            : Font_Base("freetype/" + name + "/" + size, size)
             {
                 if (l_count == 0)
                 {
@@ -168,7 +167,12 @@ namespace mush
                 FT_Select_Charmap(face, ft_encoding_unicode);
                 FT_Set_Pixel_Sizes(face, 0, size);
 
-                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz.,!?1234567890+-=:;";
+                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz.,!?1234567890+-=:;'";
+                
+                line_spacing = (face->height >> 6);
+                
+                FT_Load_Char(face, ' ', FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
+                space_len = face->glyph->advance.x >> 6;
 
                 for (char32_t c : precache)
                     load_glyph(c);
@@ -183,16 +187,6 @@ namespace mush
                     FT_Done_FreeType(library);
             }
 
-            float next_line() const
-            {
-                return line_spacing * face->height / 64.0f;
-            }
-
-            int32_t get_advance(char32_t glyph)
-            {
-                return face->glyph->advance.x >> 6;
-            }
-    
             mush::Rectangle glyph_metrics(char32_t glyph) const;
     };
     #endif
@@ -207,7 +201,7 @@ namespace mush
                  uint32_t size,
                  uint32_t spacelen,
                  uint32_t descent)
-            : Font_Base("bitmap/" + name + "/" + size)
+            : Font_Base("bitmap/" + name + "/" + size, size)
             {}
     };
     #endif
@@ -251,7 +245,6 @@ namespace mush
             atlas.reset();
         }
     } font_info;
-    //std::unique_ptr<font_info_t> font_info = std::make_unique<font_info_t>();
 
     // return position in the bitmap
     mush::Rectangle Font_Base::get_glyph(char32_t glyph) const
