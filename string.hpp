@@ -733,6 +733,18 @@ namespace mush
         return false;
     }
 
+    #ifndef MUSH_INTERNAL_REMOVE_CR
+    #define MUSH_INTERNAL_REMOVE_CR
+    template <typename T> struct remove_cr              { typedef T type; };
+    template <typename T> struct remove_cr<T&>          { typedef T type; };
+    template <typename T> struct remove_cr<T&&>         { typedef T type; };
+    template <typename T> struct remove_cr<const T>     { typedef T type; };
+    template <typename T> struct remove_cr<const T&>    { typedef T type; };
+    template <typename T> struct remove_cr<const T&&>   { typedef T type; };
+    #endif
+
+    template <typename T>
+    concept bool AnyString = std::is_same<typename remove_cr<T>::type, mush::string>::value;
 }
 
 namespace std
@@ -1090,19 +1102,6 @@ namespace mush
 
         return true;
     }
-
-    #ifndef MUSH_INTERNAL_REMOVE_CR
-    #define MUSH_INTERNAL_REMOVE_CR
-    template <typename T> struct remove_cr              { typedef T type; };
-    template <typename T> struct remove_cr<T&>          { typedef T type; };
-    template <typename T> struct remove_cr<T&&>         { typedef T type; };
-    template <typename T> struct remove_cr<const T>     { typedef T type; };
-    template <typename T> struct remove_cr<const T&>    { typedef T type; };
-    template <typename T> struct remove_cr<const T&&>   { typedef T type; };
-    #endif
-
-    template <typename T>
-    concept bool AnyString = std::is_same<typename remove_cr<T>::type, mush::string>::value;
 }
 
 #endif
