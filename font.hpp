@@ -120,8 +120,13 @@ namespace mush
         public:
             bool load_glyph(char32_t c)
             {
+                assert(face);
+
                 if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT))
+                {
+                    std::cout << "Can't load glyph '" << mush::string(c) << "'!\n";
                     return false;
+                }
 
                 GlyphMetrics m;
                 // Fill in metrics TODO: Vertical Advance
@@ -139,6 +144,8 @@ namespace mush
                 // Flip the Y-axis.  Useful for OpenGL
                 ft_w = face->glyph->bitmap.width;
                 ft_h = face->glyph->bitmap.rows;
+
+//                std::cout << "loading glyph '" << mush::string(c) << "': " << ft_w << "x" << ft_h << "\n";
 
                 uint8_t remap[ft_h][ft_w];
 
@@ -170,7 +177,7 @@ namespace mush
                 FT_Select_Charmap(face, ft_encoding_unicode);
                 FT_Set_Pixel_Sizes(face, 0, size);
 
-//                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz.,!?1234567890+-=:;'";
+//                const mush::string precache = "давай";
                 const mush::string precache = "A";
                 
                 line_spacing = (face->height >> 6);
@@ -180,6 +187,7 @@ namespace mush
 
                 for (char32_t c : precache)
                     load_glyph(c);
+
             }
 
            ~Font()
@@ -283,6 +291,10 @@ namespace mush
     // add to bitmap data
     inline void Font_Base::update_cache(const mush::string& name, uint32_t w, uint32_t h, void* data_ptr)
     {
+        if (w * h == 0)
+        {
+            assert(0 && "update cache called with 0-size texture");
+        }
         if (font_info.stored.count(name) != 0)
         {
 //            std::cout << "trying to load multiple instances of '" << name << "'\n";
