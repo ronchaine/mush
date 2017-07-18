@@ -145,7 +145,7 @@ namespace mush
                 ft_w = face->glyph->bitmap.width;
                 ft_h = face->glyph->bitmap.rows;
 
-//                std::cout << "loading glyph '" << mush::string(c) << "': " << ft_w << "x" << ft_h << "\n";
+                std::cout << "loading glyph '" << mush::string(c) << "': " << ft_w << "x" << ft_h << "\n";
 
                 uint8_t remap[ft_h][ft_w];
 
@@ -177,8 +177,8 @@ namespace mush
                 FT_Select_Charmap(face, ft_encoding_unicode);
                 FT_Set_Pixel_Sizes(face, 0, size);
 
-//                const mush::string precache = "давай";
-                const mush::string precache = "A";
+                const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'#д";
+//                const mush::string precache = "A";
                 
                 line_spacing = (face->height >> 6);
                 
