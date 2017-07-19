@@ -118,10 +118,12 @@ namespace mush
             
             static FT_Face face;
 
+            mush::Buffer font_data;
+
         public:
             bool load_glyph(char32_t c);
             
-            Font(const mush::string& name, const mush::Buffer& data, uint32_t size);
+            Font(const mush::string& name, mush::Buffer data, uint32_t size);
            ~Font();
 
             mush::Rectangle glyph_metrics(char32_t glyph) const;
@@ -132,6 +134,7 @@ namespace mush
     template <>
     class Font<BITMAP_FONT> : public Font_Base
     {
+        private:
         public:
             Font(const mush::string& name,
                  const mush::Buffer& data,
@@ -184,7 +187,7 @@ namespace mush
     }
     
     Font<FREETYPE_FONT>::Font(const mush::string& name,
-         const mush::Buffer& data,
+         mush::Buffer data,
          uint32_t size)
     : Font_Base("freetype/" + name + "/" + size, size)
     {
@@ -197,7 +200,9 @@ namespace mush
         // add to refcounter
         l_count++;
 
-        if (FT_New_Memory_Face(library, &data[0], data.size(), 0, &face))
+        font_data = data;
+
+        if (FT_New_Memory_Face(library, &font_data[0], data.size(), 0, &face))
             assert(0 && "Freetype error: couldn't create new face from memory buffer");
 
         FT_Select_Charmap(face, ft_encoding_unicode);
