@@ -128,6 +128,11 @@ namespace mush
 
             mush::Rectangle glyph_metrics(char32_t glyph) const;
     };
+
+    inline mush::Font<mush::FREETYPE_FONT> load_freetype_font(const mush::string& file, uint32_t size)
+    {
+        return mush::Font<mush::FREETYPE_FONT>(file, mush::file_to_buffer(file), size);
+    }
     #endif
     
     #ifdef MUSH_BITMAP_FONTS
