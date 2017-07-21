@@ -18,11 +18,15 @@ namespace mush
             std::deque<Rectangle> unused;
             std::deque<Rectangle> mapped;
 
-            uint32_t    xoff, yoff;
             uint32_t    width, height;
 
-            RectanglePack() : minsize(4) {}
+            RectanglePack() : minsize(4), width(0), height(0) {}
            ~RectanglePack() {}
+
+            size_t size()
+            {
+                return width * height;
+            }
 
             //! Split the rectpack to smaller parts
             void split(const Rectangle& r)
