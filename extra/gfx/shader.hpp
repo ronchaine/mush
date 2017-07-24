@@ -24,6 +24,7 @@ namespace mush::extra::gfx
     {
         private:
         public:
+            virtual ~Shader_Base() {}
     };
 
     template <ShaderType T>
@@ -34,18 +35,33 @@ namespace mush::extra::gfx
 
     #ifdef MUSH_GFX_OPENGL
     template <>
-    class Shader<GLSL_SHADER> : public Shader_Base
+    class Shader<OPENGL_SHADER> : public Shader_Base
     {
         private:
+            static GLuint current_program;
+            GLuint program;
+
         public:
+            Shader<OPENGL_SHADER> load_glsl(const char* vertex_source, const char* fragment_source);
+            Shader<OPENGL_SHADER> load_spirv();
+
+           ~Shader<OPENGL_SHADER>();
     };
     #endif
 }
 
 #ifdef MUSH_IMPLEMENT_SHADER
     #ifdef MUSH_GFX_OPENGL
-    GLuint load_shader(const char* vertex_source, const char* fragment_source)
+   ~Shader<OPENGL_SHADER>()
     {
+        if (program != 0)
+            glDeleteProgram(program);
+    }
+
+    Shader<OPENGL_SHADER> load_glsl(const char* vertex_source, const char* fragment_source)
+    {
+        Shader<OPENGL_SHADER> rval;
+
         int vertex_shader, fragment_shader, program;
         int status;
 
@@ -71,7 +87,8 @@ namespace mush::extra::gfx
             std::string msg(errorLog.begin(), errorLog.end());
             std::cout << msg << "\n";
 
-            return -1;
+            rval.program = 0;
+            return rval;
         }
 
         std::cout << "  vertex shader compiled\n";
@@ -95,7 +112,8 @@ namespace mush::extra::gfx
             std::string msg(errorLog.begin(), errorLog.end());
             std::cout << msg << "\n";
 
-            return -2;
+            rval.program = 0;
+            return rval;
         }
 
         std::cout << "  fragment shader compiled\n";
@@ -109,10 +127,12 @@ namespace mush::extra::gfx
         if (!status)
         {
             glDeleteProgram(program);
-            return -3;
+            rval.program = 0;
+            return rval;
         }
 
-        return program;
+        rval.program = program;
+        return rval;
     }
     #endif
 #endif
