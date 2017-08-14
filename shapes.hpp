@@ -1,13 +1,21 @@
-#ifndef MUSH_SHAPES
-#define MUSH_SHAPES
+#ifndef MUSH_SHAPES_HEADER
+#define MUSH_SHAPES_HEADER
 
 #include <cstdint>
 #include <tuple>
 
-template<typename T>
-constexpr bool dependent_false()
+namespace mush
 {
-    return false;
+    // I don't want this piece of code to depend on any header,
+    // so I just duplicate it.
+    #ifndef MUSH_DEPENDENT_FALSE
+    #define MUSH_DEPENDENT_FALSE
+    template<typename T> struct dependent_false
+    {
+        constexpr static bool value = false;
+        bool operator()() { return false; }
+    };
+    #endif
 }
 
 namespace mush
