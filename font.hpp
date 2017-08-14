@@ -40,14 +40,26 @@
 
 namespace mush
 {
+    // I don't want this piece of code to depend on any header,
+    // so I just duplicate it.
+    #ifndef MUSH_DEPENDENT_FALSE
+    #define MUSH_DEPENDENT_FALSE
+    template<typename T> struct dependent_false
+    {
+        constexpr static bool value = false;
+        bool operator()() { return false; }
+    };
+    #endif
+}
+
+namespace mush
+{
     // I wish there was opaque type for this
     using FontType = uint32_t;
     
     constexpr FontType UNKNOWN_FONT     = 0x00;
     constexpr FontType FREETYPE_FONT    = 0x01;
     constexpr FontType BITMAP_FONT      = 0x02;
-    
-    template <FontType T> struct dependent_false { static constexpr bool value = false; };
 
     struct GlyphMetrics
     {
@@ -102,7 +114,7 @@ namespace mush
     template <FontType T>
     class Font : public Font_Base
     {
-        static_assert(dependent_false<T>::value, "Unsupported font format, did you #define MUSH_BITMAP_FONTS or MUSH_FREETYPE_FONTS?");
+        static_assert(dependent_false<decltype(T)>::value, "Unsupported font format, did you #define MUSH_BITMAP_FONTS or MUSH_FREETYPE_FONTS?");
 
         public:
             Font() : Font_Base("") {}
