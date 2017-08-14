@@ -69,11 +69,6 @@ namespace mush
         return digits;
     }
 
-    template <ssize_t Integer, size_t IntLen, size_t... Is>
-    constexpr char get_digits()
-    {
-    }
-
     template <metastring_detail::IntegralType Num>
     constexpr char nthdigit(Num x, int n)
     {
@@ -136,6 +131,8 @@ namespace mush
             friend inline std::ostream& operator<<(std::ostream& out, const metastring& val)
             {
                 out << val.c_str();
+
+                return out;
             }
     };
 
