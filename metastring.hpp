@@ -13,17 +13,18 @@ namespace mush
     template <typename A, typename B> struct concatenate_indices;
     template <size_t, size_t, typename = void> struct expand_indices;
 
-    template <size_t Size>
-    struct simple_array
+    /*
+    template <metastring_detail::IntegralType Integer, size_t... Indices, size_t Size = sizeof...(Indices)>
+    constexpr simple_array<Size> create_array(Integer n, indices<Indices...>)
     {
-        char values[Size+1];
+        simple_array<Size> rval;
 
-        simple_array()
-        {
-            for (int i = 0; i < Size; ++i)
-                values[i] = '\0';
-        }
-    };
+        for (size_t i = 0; i < Size; ++i)
+            rval.values[Size-i-1] = nthdigit(n, i);
+
+        return rval;
+    }
+    */
 
     template <size_t... Is, size_t... Js>
     struct concatenate_indices<indices<Is...>, indices<Js...>>
@@ -49,6 +50,9 @@ namespace mush
 
     template <size_t A>
     struct make_indices : expand_indices<0, A-1>::indices_type {};
+
+    template <>
+    struct make_indices<0> : indices<> {};
 
     template <size_t A, size_t B>
     struct make_indices_range : expand_indices<A, B-1>::indices_type {};
@@ -77,6 +81,51 @@ namespace mush
 
         return (x % 10) + '0';
     }
+    
+    template <char... Data>
+    struct array_holder
+    {
+        constexpr static char data[sizeof...(Data)] = {Data...};
+        constexpr static size_t size = sizeof...(Data);
+    };
+
+    constexpr metastring_detail::IntegralType abs_val(metastring_detail::IntegralType x)
+    {
+        return x < 0 ? -x : x; 
+    }
+
+    constexpr ssize_t digit_count(metastring_detail::IntegralType x)
+    {
+        return x < 0 ? 1 + digit_count(-x) : x < 10 ? 1 : 1 + digit_count(x/10);
+    }
+
+    template <size_t Size, ssize_t Num, char... Args>
+    struct numeric_builder
+    {
+        typedef typename numeric_builder<Size - 1, Num / 10, '0' + abs_val(Num) % 10, Args...>::type type;
+    };
+
+    template <ssize_t Num, char... Args>
+    struct numeric_builder<2, Num, Args...>
+    {
+        typedef array_holder<Num < 0 ? '-' : '0' + Num / 10, '0' + abs_val(Num) % 10, Args...> type;
+    };
+
+    template <ssize_t Num, char... Args>
+    struct numeric_builder<1, Num, Args...>
+    {
+        typedef array_holder<'0' + Num, Args...> type;
+    };
+
+    template <ssize_t N>
+    struct numeric_string
+    {
+        typedef typename numeric_builder<digit_count(N), N, '\0'>::type type;
+        constexpr static type value {};
+    };
+
+    template<ssize_t N>
+    constexpr typename numeric_string<N>::type numeric_string<N>::value;
 
     template <size_t N>
     class metastring
@@ -88,6 +137,7 @@ namespace mush
             template <size_t... Is, size_t... Js, size_t I>
             constexpr metastring<N+I-1> append(indices<Is...>, indices<Js...>, const char(&cstr)[I]) const
             {
+                static_assert(I > 0);
                 const char new_data[] = {data[Is]..., cstr[Js]..., '\0'};
                 return metastring<N+I-1>(new_data);
             }
@@ -114,12 +164,14 @@ namespace mush
             template <size_t I>
             constexpr metastring<N+I-1> append(const char(&cstr)[I]) const
             {
+                static_assert(I > 0);
                 return append(make_indices<N>(), make_indices<I-1>(), cstr);
             }
 
             template <size_t I>
             constexpr metastring<N+I> append(const metastring<I>& mstr) const
             {
+                static_assert(I > 0);
                 return append(make_indices<N>(), make_indices<I>(), mstr.c_str());
             }
 
@@ -148,22 +200,10 @@ namespace mush
         return first.append(second);
     }
 
-    template <metastring_detail::IntegralType Integer, size_t... Indices, size_t Size = sizeof...(Indices)>
-    constexpr simple_array<Size> create_array(Integer n, indices<Indices...>)
-    {
-        simple_array<Size> rval;
-
-        for (size_t i = 0; i < Size; ++i)
-            rval.values[Size-i-1] = nthdigit(n, i);
-
-        return rval;
-    }
-
     template <ssize_t Integer, size_t Size = get_num_size(Integer)>
     constexpr metastring<Size> integer_to_metastring()
     {
-        simple_array<Size> a = create_array(Integer, make_indices<Size>());
-        return metastring<Size>(a.values);
+        return make_string(numeric_string<Integer>::value.data);
     }
 }
 
