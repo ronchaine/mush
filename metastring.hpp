@@ -175,6 +175,18 @@ namespace mush
                 return append(make_indices<N>(), make_indices<I>(), mstr.c_str());
             }
 
+            template <bool Enabled, size_t I>
+            constexpr auto append_if(const char(&cstr)[I]) const
+            {
+                if constexpr (Enabled == false)
+                {
+                    return *this;
+                } else {
+                    static_assert(I > 0);
+                    return append(make_indices<N>(), make_indices<I-1>(), cstr);
+                }
+            }
+
             constexpr metastring<N + 1> push_back(char c) const
             {
                 return push_back(c, make_indices<N>());
