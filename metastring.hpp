@@ -13,19 +13,6 @@ namespace mush
     template <typename A, typename B> struct concatenate_indices;
     template <size_t, size_t, typename = void> struct expand_indices;
 
-    /*
-    template <metastring_detail::IntegralType Integer, size_t... Indices, size_t Size = sizeof...(Indices)>
-    constexpr simple_array<Size> create_array(Integer n, indices<Indices...>)
-    {
-        simple_array<Size> rval;
-
-        for (size_t i = 0; i < Size; ++i)
-            rval.values[Size-i-1] = nthdigit(n, i);
-
-        return rval;
-    }
-    */
-
     template <size_t... Is, size_t... Js>
     struct concatenate_indices<indices<Is...>, indices<Js...>>
     {
@@ -63,6 +50,9 @@ namespace mush
     template <metastring_detail::IntegralType Num>
     constexpr size_t get_num_size(Num n)
     {
+        if (n == 0)
+            return 1;
+
         size_t digits = 0;
         while(n)
         {
@@ -171,7 +161,7 @@ namespace mush
             template <size_t I>
             constexpr metastring<N+I> append(const metastring<I>& mstr) const
             {
-                static_assert(I > 0);
+                static_assert(I >= 0);
                 return append(make_indices<N>(), make_indices<I>(), mstr.c_str());
             }
 
@@ -184,6 +174,18 @@ namespace mush
                 } else {
                     static_assert(I > 0);
                     return append(make_indices<N>(), make_indices<I-1>(), cstr);
+                }
+            }
+            
+            template <bool Enabled, size_t I>
+            constexpr auto append_if(const metastring<I>& mstr) const
+            {
+                if constexpr (Enabled == false)
+                {
+                    return *this;
+                } else {
+                    static_assert(I > 0);
+                    return append(make_indices<N>(), make_indices<I>(), mstr.c_str());
                 }
             }
 
