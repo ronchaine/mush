@@ -56,7 +56,7 @@ namespace mush
 {
     // I wish there was opaque type for this
     using FontType = uint32_t;
-    
+
     constexpr FontType UNKNOWN_FONT     = 0x00;
     constexpr FontType FREETYPE_FONT    = 0x01;
     constexpr FontType BITMAP_FONT      = 0x02;
@@ -67,7 +67,7 @@ namespace mush
         int32_t width;
         int32_t top;
         int32_t height;
-        
+
         int32_t advance;
         int32_t vertical_advance;
     };
@@ -146,7 +146,7 @@ namespace mush
         return mush::Font<mush::FREETYPE_FONT>(file, mush::file_to_buffer(file), size);
     }
     #endif
-    
+
     #ifdef MUSH_BITMAP_FONTS
     template <>
     class Font<BITMAP_FONT> : public Font_Base
@@ -202,7 +202,7 @@ namespace mush
         rval.h =  face->glyph->bitmap.rows;
         return rval;
     }
-    
+
     Font<FREETYPE_FONT>::Font(const mush::string& name,
          mush::Buffer data,
          uint32_t size)
@@ -225,17 +225,15 @@ namespace mush
         FT_Select_Charmap(face, ft_encoding_unicode);
         FT_Set_Pixel_Sizes(face, 0, size);
 
-        const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'#дажай";
-//                const mush::string precache = "A";
-        
+        const mush::string precache = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'";
+
         line_spacing = (face->height >> 6);
-        
+
         FT_Load_Char(face, ' ', FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
         space_len = face->glyph->advance.x >> 6;
 
         for (char32_t c : precache)
             load_glyph(c);
-
     }
 
     Font<FREETYPE_FONT>::~Font()
@@ -274,8 +272,6 @@ namespace mush
         ft_w = face->glyph->bitmap.width;
         ft_h = face->glyph->bitmap.rows;
 
-//        std::cout << "loading glyph '" << mush::string(c) << "': " << ft_w << "x" << ft_h << "\n";
-
         uint8_t remap[ft_h][ft_w];
 
         for (uint32_t i = 0; i < ft_w; ++i) for (uint32_t j = 0; j < ft_h; ++j)
@@ -311,7 +307,7 @@ namespace mush
     {
         return MUSH_FONTBUFFER_CHANNELS;
     }
-            
+
     const void* Font_Base::data() const
     {
         return font_info.data;
@@ -329,7 +325,7 @@ namespace mush
 //            std::cout << "trying to load multiple instances of '" << name << "'\n";
             return;
         }
-        
+
         mush::Rectangle r = font_info.atlas.fit(w, h);
 
         if (r == mush::Rectangle{0,0,0,0})
@@ -349,7 +345,6 @@ namespace mush
             }
         }
     }
-
     #endif
 }
 

@@ -84,6 +84,8 @@ namespace mush::extra::opengl
             constexpr static bool       has_rgba    = Flags & VERTEX_RGBA_COLOUR;
             constexpr static bool       has_hsv     = Flags & VERTEX_HSV_SHIFT;
 
+            constexpr static VertexTypeFlags flags  = Flags;
+
             VertexType() {}
 
             friend inline std::ostream& operator<<(std::ostream& out, const VertexType& val)

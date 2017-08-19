@@ -19,57 +19,12 @@
 #include "../../string.hpp"
 #include "../../metastring.hpp"
 
+#include "shader_common.hpp"
+#include "shadergen.hpp"
 #include "vertex.hpp"
-
-namespace mush::detail::shadergen
-{
-        // default to 3D shader
-        template <uint32_t pc>
-        struct inputs_pos { constexpr static GLchar vec[] = "layout(location = 0) in vec3 in_pos;\n"; };
-
-        template <>
-        struct inputs_pos<2> { constexpr static GLchar vec[] = "layout(location = 0) in vec2 in_pos;\n"; };
-
-        template <uint32_t pos_comp>
-        constexpr static GLchar inputs[] =
-                "layout(location = 0) in vec2 in_pos;\n"
-                "layout(location = 1) in vec2 in_tex;\n"
-                "layout(location = 2) in vec4 in_col;\n";
-/*
-        template <>
-        constexpr static GLchar inputs[]<2>
-                "layout(location = 0) in vec2 in_pos;\n"
-                "layout(location = 1) in vec2 in_tex;\n"
-                "layout(location = 2) in vec4 in_col;\n";
-*/
-}
 
 namespace mush::extra::opengl
 {
-    namespace detail
-    {
-        // string combiner
-        template<int...I> using intseq      = std::integer_sequence<int,I...>;
-        template<int N>   using make_intseq = std::make_integer_sequence<int,N>;
-
-        constexpr auto size(const char*s) { int i = 0; while(*s!=0){++i;++s;} return i; }
-
-        template<const char*, typename, const char*, typename>
-        struct concat_impl;
-
-        template<const char* S1, int... I1, const char* S2, int... I2>
-        struct concat_impl<S1, intseq<I1...>, S2, intseq<I2...>> {
-            static constexpr const char value[]
-            {
-                S1[I1]..., S2[I2]..., 0
-            };
-        };
-
-        template<const char* S1, const char* S2>
-        constexpr auto concat {
-            concat_impl<S1, make_intseq<size(S1)>, S2, make_intseq<size(S2)>>::value
-        };
-    }
 
     // Type traits
     template <typename T>
@@ -102,11 +57,6 @@ namespace mush::extra::opengl
 
     template <typename T>
     concept bool Matrix = matrix_type<T>::value;
-
-    using ShaderGenFlags = uint32_t;
-    using ShaderType = uint32_t;
-
-    constexpr static ShaderType VERTEX_FRAGMENT = 0x00;
 
     template <AnyVertexType VT, ShaderType ST = VERTEX_FRAGMENT>
     class Shader
@@ -352,50 +302,37 @@ namespace mush::extra::opengl
                 }
             }
 
+            // make this the better generator
+            template <ShaderType ShaderT, extra::opengl::AnyVertexType VertT = VT>
+            void generate(Shader_Info<ShaderT, VertT> info)
+            {
+            }
+
+            // the shader generation sucks, make better one that actually reads shader_info struct
+            // and handles things like MRT.
             void generate_default()
             {
-                // shader meta
-                mush::metastring shader_src = mush::make_string(
-                    "#version 330\n"
-                    "#extension GL_ARB_explicit_attrib_location : require\n"
-                );
-/*
-                if constexpr(vertex_type::dim) {
-                }
-*/
-/*
-        constexpr static GLchar default_vertex_source[] =
-                "layout(location = 0) in vec2 in_pos;\n"
-                "layout(location = 1) in vec2 in_tex;\n"
-                "layout(location = 2) in vec4 in_col;\n"
-                "out vec4 ex_col;\n"
-                "out vec2 ex_tex0;\n"
-                "void main()\n{\n"
-                "ex_tex0 = in_tex;\n"
-                "ex_col = in_col;\n"
-                "gl_Position = vec4(in_pos, 0.0, 1.0);\n}\n\0";
-        
-        constexpr static GLchar default_vertex_source[] =
-                "layout(location = 0) in vec2 in_pos;\n"
-                "layout(location = 1) in vec2 in_tex;\n"
-                "layout(location = 2) in vec4 in_col;\n"
-                "out vec4 ex_col;\n"
-                "out vec2 ex_tex0;\n"
-                "void main()\n{\n"
-                "ex_tex0 = in_tex;\n"
-                "ex_col = in_col;\n"
-                "gl_Position = vec4(in_pos, 0.0, 1.0);\n}\n\0";
-        
-        constexpr static GLchar* default_fragment_source =
-            "#version 330\n"
-            "precision highp float;\n"
-            "in vec2 ex_tex0;\n"
-            "in vec4 ex_col;\n"
-            "uniform sampler2D diffuse;\n"
-            "out vec4 outc;\n"
-            "void main()\n{\n"
-            "outc = ex_col * texture2D(diffuse, ex_tex0);\n}\0";
-*/
+                static_assert(vertex_type::uv_count < 2 && "generate_default() doesn't support > 1 texture coordinates");
+
+                using namespace mush::detail;
+
+                auto vertex_source = make_string("")
+                    .append(shadergen::generate_header<0>())
+                    .append(shadergen::generate_pos_input<vertex_type::dim>())
+                    .append(shadergen::generate_UV_inputs<VERTEX_SHADER, 0, vertex_type::uv_count>())
+                    .append(shadergen::generate_ext_inputs<VERTEX_SHADER, vertex_type::uv_count+1, vertex_type::flags>())
+                    .append(shadergen::generate_vs_outputs<0, vertex_type::uv_count, vertex_type::flags>())
+                    .append(shadergen::generate_vs_main<vertex_type::dim, 0, vertex_type::uv_count, vertex_type::flags>());
+
+                auto fragment_source = make_string("")
+                    .append(shadergen::generate_header<1>())
+                    .append(shadergen::generate_UV_inputs<FRAGMENT_SHADER, 0, vertex_type::uv_count>())
+                    .append(shadergen::generate_ext_inputs<FRAGMENT_SHADER, vertex_type::uv_count+1, vertex_type::flags>())
+                    .append("out vec4 outc;\n")
+                    .append(shadergen::generate_fs_main<vertex_type::uv_count, vertex_type::flags>());
+                
+                std::cout << vertex_source << "\n" << fragment_source << "\n";
+                load_glsl(vertex_source.c_str(), fragment_source.c_str());
             }
     };
 }
