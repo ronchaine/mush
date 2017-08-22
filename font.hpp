@@ -1,3 +1,17 @@
+/** 
+ * @file font.hpp
+ * @brief Font class definition and implementation
+ * @author Jari Ronkainen
+ * @version 0.5
+ * @date 2017-08-22
+ *
+ * Font class acts as a way to read font data from a file and retrieve glyph data as bitmap
+ * and metrics.  Supports Freetype Fonts if MUSH_FREETYPE_FONTS is defined and bitmap fonts
+ * if MUSH_BITMAP_FONTS is defined before including the file.
+ *
+ * Defining MUSH_FREETYPE_FONTS requires FreeType2
+ * Defining MUSH_BITMAP_FONTS requires stb_image
+ */
 #ifndef MUSH_FONT_HEADER
 #define MUSH_FONT_HEADER
 

@@ -1,3 +1,18 @@
+/** 
+ * @file string.hpp
+ * @brief String class
+ * @author Jari Ronkainen, Nemanja Trifunovic
+ * @version 1.0
+ * @date 2017-08-22
+ *
+ * The string class stores a series of char32_t characters in an array.
+ * The class can be use in similar manner as the std::string class
+ *
+ * Strings stored are encoded in UTF-32, they are NOT guaranteed to be
+ * null-terminated, so it's not recommended to use raw pointers
+ * obtained with ptr().
+ *
+ */
 #include <iostream>
 
 #ifndef MUSH_STRING_HEADER

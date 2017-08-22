@@ -1,3 +1,19 @@
+/**
+ * @file buffer.hpp
+ * @brief Contains definitions and implementation for the Buffer class and associated functions
+ * @author Jari Ronkainen
+ * @version 1.1
+ * @date 2017-08-22
+ *
+ * Buffer acts much like std::vector (actually using it as internal storage), but is intended
+ * for holding raw data.  In addition to usual vector operations, it is possible to read and
+ * write data into the buffer using additonal IO functions that automatically handle endian
+ * conversions as well.
+ *
+ * Buffer needs no #defines or any other magic, just include the header and it's ready to use.
+ *
+ */
+
 #include <iostream>
 
 #ifndef MUSH_BUFFER
@@ -49,8 +65,7 @@ namespace mush
         return true;
     }
 
-    template <typename T>
-    concept bool PODType = std::is_pod<T>::value;
+    template <typename T> concept bool PODType = std::is_pod<T>::value;
 
     #ifndef MUSH_INTERNAL_REMOVE_CR
     #define MUSH_INTERNAL_REMOVE_CR
@@ -62,24 +77,44 @@ namespace mush
     template <typename T> struct remove_cr<const T&&>   { typedef T type; };
     #endif
 
+    /** 
+     * @brief Class for holding raw data
+     */
     class Buffer : public std::vector<uint8_t>
     {
         public:
-            Buffer()
-            {
-                read_ptr = 0;
-            }
+            /** 
+             * @brief Default constructor
+             *
+             * The default (and only9 constructor for Buffer class,
+             * sets read_ptr to begining of the Buffer and returns
+             */
+            Buffer() : read_ptr(0) {}
 
             // allow reading point to change even if the buffer is const
+            //! read_ptr is the position in the Buffer where reads will take place,
+            //! expressed in bytes from the start, where 0 is the start of the buffer
             mutable size_t read_ptr;
+
+            //! get data pointer for the buffer
             inline const uint8_t* getptr() const { return &this->at(0); }
+
+            //! get buffer FNV-1a hash
             inline size_t hash() const noexcept;
 
+            //! convert the buffer to a std::string, sometimes useful for textual data
             inline std::string to_string() const
             {
                 return std::string(this->begin(), this->end());
             }
 
+            /** 
+             * @brief Read data until a byte is met
+             * 
+             * @param delim byte ending the search
+             * 
+             * @return A new buffer holding all the values up to and including the delim byte.
+             */
             Buffer read_until(const uint8_t delim) const
             {
                 Buffer rval;
@@ -95,12 +130,28 @@ namespace mush
                 return rval;
             };
 
+            /** 
+             * @brief Convert from std::string to a buffer
+             *
+             * Takes a string and replaces contents of the buffer with the
+             * contents of the string
+             * 
+             * @param s  input string.
+             *
+             */
             inline void from_stl_string(const std::string& s)
             {
                 this->clear();
                 std::copy(s.begin(), s.end(), back_inserter(*this));
             }
 
+            /** 
+             * @brief Checks if there are still enough data remaining that can be read
+             * 
+             * @param s  How many bytes need still to be read
+             * 
+             * @return true if size of the buffer is large enough for s bytes of data to be read, otherwise false
+             */
             inline bool can_read(size_t s) const
             {
                 if (size() < pos() + s)
@@ -109,6 +160,11 @@ namespace mush
                 return true;
             };
 
+            /** 
+             * @brief Read a string that represents an integer
+             * 
+             * @return Integer of requested type represented by the text data read
+             */
             template <typename T>
             inline T read_strval() const
             {
@@ -128,6 +184,13 @@ namespace mush
                 return atoi(val.to_string().c_str());
             }
 
+            /** 
+             * @brief Read data from a buffer into a new buffer
+             * 
+             * @param len Number of bytes to be read
+             * 
+             * @return A new buffer containing len bytes of data.
+             */
             inline Buffer read_bytes(size_t len) const
             {
                 Buffer rval;
@@ -140,6 +203,13 @@ namespace mush
                 return rval;
             }
 
+            /** 
+             * @brief Replace data in a buffer
+             * 
+             * @param loc   where in buffer the replaced data starts
+             * @param len   how many bytes of the data will be replaced
+             * @param src   source data buffer
+             */
             inline void replace(size_t loc, size_t len, const Buffer& src)
             {
                 // make sure the buffer is large enough
@@ -153,6 +223,13 @@ namespace mush
                 memcpy(data() + loc, src.data(), len);
             }
 
+            /** 
+             * @brief Read data of type T from the buffer
+             * 
+             * @param where the position where to read, if omitted, read_ptr is used as the position
+             * 
+             * @return Data read as type T.
+             */
             template <typename T>
             inline T read(size_t where) const
             {
@@ -180,6 +257,13 @@ namespace mush
                 return rval;
             }
             
+            /** 
+             * @brief Read little-endian data of type T from the buffer
+             * 
+             * @param where the position where to read, if omitted, read_ptr is used as the position
+             * 
+             * @return Data read as type T.
+             */
             template <typename T>
             inline T read_le(size_t where) const
             {
@@ -204,6 +288,11 @@ namespace mush
                 return rval;
             }
 
+            /** 
+             * @brief Write data of type T to the end of the buffer
+             * 
+             * @param data  data to be written into the buffer
+             */
             template <typename T>
             inline void write(const T& data)
             {
@@ -233,27 +322,6 @@ namespace mush
             }
             #endif
 
-
-            template <typename T>
-            inline void write_le(const T& data)
-            {
-                this->reserve(this->size() + sizeof(T));
-
-                uint8_t* dataptr = nullptr;
-                T t_val;
-
-                if (!big_endian())
-                {
-                    t_val = endian_swap(data);
-                    dataptr = (uint8_t*)&t_val;
-                } else {
-                    dataptr = (uint8_t*)&data;
-                }
-
-                for (size_t it = 0; it < sizeof(T); ++it)
-                    this->push_back(*(dataptr+it));
-            }
-
             // make no-op 
             inline void write_byte() {}
 
@@ -268,6 +336,13 @@ namespace mush
                 this->write<uint8_t>(byte);
                 this->write_byte(bytes...);
             }
+
+
+            /** 
+             * @brief Write series of bytes into the buffer
+             * 
+             * @param bytes  bytes to be written
+             */
             template <typename... Ts>
             inline void write_bytes(Ts... bytes)
             {
@@ -275,17 +350,26 @@ namespace mush
                 this->write_byte(bytes...);
             }
 
+            //! return the position of read_ptr
             inline size_t pos() const
             {
                 return read_ptr;
             }
 
+            //! move the read_ptr
             inline void seek(size_t target) const
             {
                 if (target < size()) read_ptr = target;
             }
     };
 
+    /** 
+     * @brief Read a complete file from the filesystem into the buffer
+     * 
+     * @param filename  file name
+     * 
+     * @return Buffer containing the contents of the file
+     */
     inline Buffer file_to_buffer(const std::string& filename)
     {
         Buffer rval;
@@ -305,6 +389,11 @@ namespace mush
         return rval;
     }
 
+    /** 
+     * @brief Write a buffer into the buffer
+     * 
+     * @param buf   the buffer to be appended
+     */
     template<>
     inline void Buffer::write(const Buffer& buf)
     {

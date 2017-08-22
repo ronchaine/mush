@@ -7,6 +7,13 @@
 
 #include <cstdint>
 
+#define DEBUG_INCLUDE_OPENGL_GLFW
+
+#ifdef DEBUG_INCLUDE_OPENGL_GLFW
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#endif
+
 #include <iostream>
 #include <vector>
 

@@ -1,3 +1,10 @@
+/** 
+ * @file fixed.hpp
+ * @brief Fixed point type
+ * @author Jari Ronkainen
+ * @version 1.0
+ * @date 2017-08-22
+ */
 #ifndef MUSH_FIXED_POINT
 #define MUSH_FIXED_POINT
 

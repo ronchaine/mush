@@ -1,3 +1,11 @@
+/** 
+ * @file checksum.hpp
+ * @brief Contains implementation for calculating CRC32, other checksum types and/or hashes
+ *        might appear at some point
+ * @author Jari Ronkainen
+ * @version 0.3
+ * @date 2017-08-22
+ */
 #ifndef MUSH_CHECKSUM
 #define MUSH_CHECKSUM
 
@@ -74,37 +82,20 @@ namespace mush
             0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
             0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
         };
-/*
-        constexpr uint32_t crc_k_value(uint32_t C, uint32_t K = 0)
-        {
-            return K < 8 ? crc_k_value((C & 1) ? (0xebd88320 ^ (C >> 1)) : (C >> 1), K + 1) : C;
-        }
 
-        struct CRCTable { uint32_t value[256]; };
-
-        template<bool> struct crc_value_type { typedef CRCTable type; };
-        template<> struct crc_value_type<false> {};
-
-        template<typename... T>
-        constexpr typename crc_value_type<sizeof...(T) == 256>::type compute(uint32_t n, T... t)
-        {
-            return CRCTable{{t...}};
-        }
-
-        template<typename... T>
-        constexpr typename crc_value_type<sizeof...(T) <= 255>::type compute(uint32_t n, T... t)
-        {
-            return compute(n+1, t..., crc_k_value(n));
-        }
-
-        // build CRC table
-        constexpr CRCTable table = compute(0);
-
-*/
         template <uint8_t Index>
         constexpr uint32_t crc_table = table[Index];
     }
 
+    /** 
+     * @brief Update CRC checksum with given data
+     * 
+     * @param crc   CRC where we were at
+     * @param buf   pointer to the data
+     * @param len   length of the data
+     * 
+     * @return 
+     */
     inline uint32_t update_crc(uint32_t crc, uint8_t* buf, size_t len)
     {
         uint32_t c = crc;
@@ -115,6 +106,14 @@ namespace mush
         return c;
     }
 
+    /** 
+     * @brief Calculate CRC checksum of given data
+     * 
+     * @param buf   pointer to the data
+     * @param len   length of the data
+     * 
+     * @return CRC32 checksum of given data and length
+     */
     inline uint32_t crc32(uint8_t* buf, size_t len)
     {
         return update_crc(0xffffffff, buf, len) ^ 0xffffffff;

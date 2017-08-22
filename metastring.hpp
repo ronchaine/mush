@@ -1,3 +1,10 @@
+/** 
+ * @file metastring.hpp
+ * @brief Compile time string implementation
+ * @author Jari Ronkainen
+ * @version 1.0
+ * @date 2017-08-22
+ */
 #ifndef MUSH_METASTRING_HEADER
 #define MUSH_METASTRING_HEADER
 
