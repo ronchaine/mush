@@ -287,12 +287,18 @@ namespace mush::extra::opengl
 
             void use()
             {
+                if (current_program == program)
+                    return;
+
                 if (program == 0)
                 {
                     std::cout << "can't use incomplete shader\n";
                     std::abort();
                     return;
                 }
+
+                std::cout << "switched to shader " << program << "\n";
+
                 current_program = program;
                 glUseProgram(program);
             }
@@ -335,10 +341,14 @@ namespace mush::extra::opengl
                     .append("out vec4 outc;\n")
                     .append(shadergen::generate_fs_main<vertex_type::uv_count, vertex_type::flags>());
                 
-                std::cout << vertex_source << "\n" << fragment_source << "\n";
+                //std::cout << vertex_source << "\n" << fragment_source << "\n";
                 load_glsl(vertex_source.c_str(), fragment_source.c_str());
             }
     };
+    
+    template <AnyVertexType VT, ShaderType ST>
+    GLint Shader<VT,ST>::current_program;
+
 }
 
 #endif

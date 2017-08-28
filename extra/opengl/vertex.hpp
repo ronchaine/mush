@@ -56,7 +56,7 @@ namespace mush::extra::opengl
     // Vertex colour chunk
     struct VertexRGBAColour
     {
-        uint8_t r, g, b, a;
+        uint8_t r = 0xff, g = 0xff, b = 0xff, a = 0xff;
 
         void set_colour(uint32_t rgba)
         {
@@ -66,7 +66,7 @@ namespace mush::extra::opengl
             a = 0xff & rgba;
         }
     };
-    struct VertexHSVShift { float h, s, v; };
+    struct VertexHSVShift { float hue = 0.0f, sat = 1.0f, val = 1.0f; };
 
     template<typename T> struct Empty {};
 
@@ -75,8 +75,10 @@ namespace mush::extra::opengl
           std::conditional<Flags & VERTEX_HSV_SHIFT,    VertexHSVShift, Empty<VertexHSVShift>>::type
     {};
 
-    template <uint32_t Pos_Components, uint32_t UV_Count, VertexTypeFlags Flags>
-    class VertexType : public VertexPositionBase<Pos_Components>, VertexTexCoordBase<UV_Count>, VertexFlagsBase<Flags>
+    template <uint32_t Pos_Components, uint32_t UV_Count, VertexTypeFlags Flags = 0>
+    class VertexType : public VertexPositionBase<Pos_Components>,
+                       public VertexTexCoordBase<UV_Count>,
+                       public VertexFlagsBase<Flags>
     {
         public:
             constexpr static uint32_t   dim         = Pos_Components;

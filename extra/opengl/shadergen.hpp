@@ -241,8 +241,10 @@ namespace mush::detail::shadergen
                 {
                     return make_string(
                         "vec3 hsv = rgb2hsv(ex_col.rgb);\n"
-                        "hsv = hsv * ex_hsv;\n"
-                        "outc = ex_col * vec4(hsv2rgb(hsv), 1.0);\n"
+                        "hsv.r = hsv.r + ex_hsv.r;\n"
+                        "hsv.g = hsv.g * ex_hsv.g;\n"
+                        "hsv.b = hsv.b * ex_hsv.b;\n"
+                        "outc = vec4(hsv2rgb(hsv), ex_col.a);\n"
                         "}\n"
                     );
                 } else {
@@ -258,7 +260,9 @@ namespace mush::detail::shadergen
                     return make_string(
                         "vec4 diff = texture2D(diffuse,ex_tex0);\n"
                         "vec3 hsv = rgb2hsv(diff.rgb);\n"
-                        "hsv = hsv * ex_hsv;\n"
+                        "hsv.r = hsv.r + ex_hsv.r;\n"
+                        "hsv.g = hsv.g * ex_hsv.g;\n"
+                        "hsv.b = hsv.b * ex_hsv.b;\n"
                         "outc = ex_col * vec4(hsv2rgb(hsv), diff.a);\n"
                         "}\n"
                     );

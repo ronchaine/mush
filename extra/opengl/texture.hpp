@@ -12,13 +12,23 @@ namespace mush::extra::opengl
     class Texture
     {
         private:
-            GLuint   texture;
+            GLuint texture;
 
             uint32_t width;
             uint32_t height;
-
+            
         public:
-            Texture() : texture(0), width(0), height(0) {}
+            Texture() : texture(0), width(0), height(0)
+            {
+                glGenTextures(1, &texture);
+            }
+
+            Texture(uint32_t width, uint32_t height, uint32_t channels)
+            {
+                glGenTextures(1, &texture);
+                init(width, height, channels);
+            }
+
            ~Texture()
             {
                 if (texture == 0)
@@ -27,11 +37,15 @@ namespace mush::extra::opengl
                 glDeleteTextures(1, &texture);
             }
 
+            const GLuint id()
+            {
+               return texture;
+            }
+
             void init(uint32_t w, uint32_t h, uint32_t channels)
             {
                 glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-                glGenTextures(1, &texture);
                 glBindTexture(GL_TEXTURE_2D, texture);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -44,6 +58,7 @@ namespace mush::extra::opengl
             
             void update(const void* image, uint32_t xoff, uint32_t yoff, uint32_t w, uint32_t h)
             {
+                glBindTexture(GL_TEXTURE_2D, texture);
                 glTexSubImage2D(GL_TEXTURE_2D, 0, xoff, yoff, w, h, GL_RGBA, GL_UNSIGNED_BYTE, image);
             }
 
