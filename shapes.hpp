@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <tuple>
+#include <iostream>
 
 namespace mush
 {
@@ -113,6 +114,12 @@ namespace mush
             y = *(list.begin()+1);
             w = *(list.begin()+2);
             h = *(list.begin()+3);
+        }
+        
+        friend inline std::ostream& operator<<(std::ostream& out, const Rectangle& val)
+        {
+            out << "(" << val.x << "," << val.y << ";" << val.w << "," << val.h << ")";
+            return out;
         }
     };
     
