@@ -7,13 +7,6 @@
 
 #include <cstdint>
 
-#define DEBUG_INCLUDE_OPENGL_GLFW
-
-#ifdef DEBUG_INCLUDE_OPENGL_GLFW
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#endif
-
 #include <iostream>
 #include <vector>
 
@@ -62,11 +55,20 @@ namespace mush::extra::opengl
     template <typename T>
     concept bool Matrix = matrix_type<T>::value;
 
+    template <uint32_t Dummy>
+    struct Shader_Common
+    {
+        protected:
+            static GLint current_program;
+    };
+
+    template <uint32_t Dummy>
+    GLint Shader_Common<Dummy>::current_program;
+
     template <AnyVertexType VT, ShaderType ST = VERTEX_FRAGMENT>
-    class Shader
+    class Shader : Shader_Common<0>
     {
         private:
-            static GLint current_program;
             GLint program;
 
         protected:
@@ -297,8 +299,6 @@ namespace mush::extra::opengl
                     return;
                 }
 
-                std::cout << "switched to shader " << program << "\n";
-
                 current_program = program;
                 glUseProgram(program);
             }
@@ -342,12 +342,14 @@ namespace mush::extra::opengl
                     .append(shadergen::generate_fs_main<vertex_type::uv_count, vertex_type::flags>());
                 
                 //std::cout << vertex_source << "\n" << fragment_source << "\n";
+                std::cout << "generating default shader for VertexType<" << vertex_type::dim << "," << vertex_type::uv_count << ",???>\n";
                 load_glsl(vertex_source.c_str(), fragment_source.c_str());
             }
     };
-    
+    /*
     template <AnyVertexType VT, ShaderType ST>
     GLint Shader<VT,ST>::current_program;
+    */
 
 }
 

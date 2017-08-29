@@ -11,6 +11,12 @@
 
 namespace mush::extra::opengl
 {
+    struct SpriteInfo
+    {
+        mush::Rectangle r;
+        std::tuple<uint16_t, uint16_t, uint16_t, uint16_t> uv;
+    };
+
     template <uint32_t Channels = 4>
     class SpriteSheet
     {
@@ -39,9 +45,12 @@ namespace mush::extra::opengl
                 return atlas.height;
             }
 
-            mush::Rectangle operator[](const mush::string& name)
+            SpriteInfo operator[](const mush::string& name)
             {
-                return get_rect(name);
+                SpriteInfo rval;
+                rval.r = get_rect(name);
+                rval.uv = get_uv(name);
+                return rval;
             }
 
             mush::Rectangle get_rect(const mush::string& name)

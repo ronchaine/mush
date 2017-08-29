@@ -4,9 +4,6 @@
 #include <cstdint>
 #include <cassert>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
 namespace mush::extra::opengl
 {
     class Texture
@@ -98,7 +95,13 @@ namespace mush::extra::opengl
                 glActiveTexture(GL_TEXTURE0 + texture_unit);
                 glBindTexture(GL_TEXTURE_2D, texture);
             }
-   };
+    };
+    
+    void unbind(GLint texture_unit)
+    {
+        glActiveTexture(GL_TEXTURE0 + texture_unit);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 }
 
 #endif

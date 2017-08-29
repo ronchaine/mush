@@ -9,12 +9,57 @@
 
 namespace mush::extra::opengl
 {
+    // first some voodoo to keep this stuff header-only and keep
+    // ourselves consistent with render target
+    template <uint32_t Dummy = 0>
+    struct RenderTarget_Base
+    {
+        static GLuint           current_target;
+    };
+    template <uint32_t Dummy>
+    GLuint RenderTarget_Base<Dummy>::current_target;
+
+    template <uint32_t Display = 0>
+    struct Screen_Info
+    {
+        static uint32_t width;
+        static uint32_t height;
+
+        static void update_size(uint32_t w, uint32_t h, bool set_view)
+        {
+            width = w;
+            height = h;
+            
+            if (RenderTarget_Base<0>::current_target == 0 && set_view)
+                glViewport(0,0,w,h);
+        }
+    };
+
+    // instantiate as used
+    template <uint32_t Display>
+    uint32_t Screen_Info<Display>::width;
+    template <uint32_t Display>
+    uint32_t Screen_Info<Display>::height;
+
+    inline void update_screen_size(uint32_t w, uint32_t h, bool set_viewport = true)
+    {
+        Screen_Info<0>::update_size(w, h, set_viewport);
+    }
+    
+    inline uint32_t screen_width(uint32_t w)
+    {
+        return Screen_Info<0>::width;
+    }
+    
+    inline uint32_t screen_height(uint32_t w)
+    {
+        return Screen_Info<0>::height;
+    }
+
     template <uint32_t MRTLevel>
-    class RenderTarget
+    class RenderTarget : RenderTarget_Base<0>
     {
         private:
-            static GLuint           current_target;
-
             GLuint                  id;
             GLuint                  depth_buffer;
 
@@ -70,10 +115,10 @@ namespace mush::extra::opengl
                 glBindFramebuffer(GL_FRAMEBUFFER, id);
             }
 
-            static void unset(uint32_t w = 0, uint32_t h = 0)
+            static void unset()
             {
                 current_target = 0;
-                glViewport(0.0, 0.0, w, h);
+                glViewport(0.0, 0.0, Screen_Info<0>::width, Screen_Info<0>::height);
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
             }
     };
