@@ -7,6 +7,7 @@
 #include "opengl/spritesheet.hpp"
 #include "opengl/renderutils.hpp"
 #include "opengl/drawingtools.hpp"
+#include "opengl/glconsole.hpp"
 
 // provide short
 namespace mxgl = mush::extra::opengl;

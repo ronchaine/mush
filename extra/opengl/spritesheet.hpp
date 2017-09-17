@@ -45,6 +45,11 @@ namespace mush::extra::opengl
                 return atlas.height;
             }
 
+            size_t size()
+            {
+                return stored.size();
+            }
+
             SpriteInfo operator[](const mush::string& name)
             {
                 SpriteInfo rval;
@@ -95,6 +100,11 @@ namespace mush::extra::opengl
                 stored[name] = r;
 
                 texture.update(data, r.x, r.y, r.w, r.h);
+            }
+
+            bool has(const mush::string& name)
+            {
+                return (stored.count(name) != 0);
             }
 
             void bind(GLint texture_unit)

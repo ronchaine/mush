@@ -7,8 +7,6 @@
 #include "spritesheet.hpp"
 #include "renderutils.hpp"
 
-#include "../../ansi.hpp"
-
 #include "../deps/stb_image.h"
 
 namespace mush::extra::opengl
@@ -58,8 +56,8 @@ namespace mush::extra::opengl
     {
         template <AnyVertexType VT>
         void rectangle(VertexBuffer<VT>& buf,
-                       uint32_t x,
-                       uint32_t y,
+                       int32_t x,
+                       int32_t y,
                        uint32_t w,
                        uint32_t h,
                        uint16_t left,
@@ -132,25 +130,25 @@ namespace mush::extra::opengl
         }
         
         template <AnyVertexType VT>
-        void rectangle(VertexBuffer<VT>& buf, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t c0, uint32_t c1, uint32_t c2, uint32_t c3)
+        void rectangle(VertexBuffer<VT>& buf, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c0, uint32_t c1, uint32_t c2, uint32_t c3)
         {
             rectangle(buf, x, y, w, h, 0x0000, 0xffff, 0xffff, 0x0000, c0, c1, c2, c3);
         }
         template <AnyVertexType VT>
-        void rectangle(VertexBuffer<VT>& buf, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t c0, uint32_t c1)
+        void rectangle(VertexBuffer<VT>& buf, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c0, uint32_t c1)
         {
             rectangle(buf, x, y, w, h, c0, c0, c1, c1);
         }
         template <AnyVertexType VT>
-        void rectangle(VertexBuffer<VT>& buf, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t c0 = 0xffffffff)
+        void rectangle(VertexBuffer<VT>& buf, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c0 = 0xffffffff)
         {
             rectangle(buf, x, y, w, h, c0, c0, c0, c0);
         }
         template <AnyVertexType VT>
         void sprite(VertexBuffer<VT>& buf,
                     const SpriteInfo& sprite,
-                    uint32_t x,
-                    uint32_t y,
+                    int32_t x,
+                    int32_t y,
                     uint32_t c0,
                     uint32_t c1,
                     uint32_t c2,
@@ -161,17 +159,14 @@ namespace mush::extra::opengl
                       std::get<1>(sprite.uv),
                       std::get<3>(sprite.uv),
                       std::get<2>(sprite.uv),
-                      c0,
-                      c1,
-                      c2,
-                      c3
+                      c0,c1,c2,c3
                      );
         }
         template <AnyVertexType VT>
         void sprite(VertexBuffer<VT>& buf,
                     const SpriteInfo& sprite,
-                    uint32_t x,
-                    uint32_t y)
+                    int32_t x,
+                    int32_t y)
         {
             rectangle(buf, x, y, sprite.r.w, sprite.r.h, 
                       std::get<0>(sprite.uv),
@@ -184,7 +179,71 @@ namespace mush::extra::opengl
                       0xffffffff
                      );
         }
-    } // namespace draw
+        template <AnyVertexType VT>
+        void sprite(VertexBuffer<VT>& buf,
+                    const SpriteInfo& sprite,
+                    int32_t x,
+                    int32_t y,
+                    uint32_t colour)
+        {
+            rectangle(buf, x, y, sprite.r.w, sprite.r.h, 
+                      std::get<0>(sprite.uv),
+                      std::get<1>(sprite.uv),
+                      std::get<3>(sprite.uv),
+                      std::get<2>(sprite.uv),
+                      colour,
+                      colour,
+                      colour,
+                      colour
+                     );
+        }
+        
+        template <AnyVertexType VT>
+        void sprite(VertexBuffer<VT>& buf,
+                    const SpriteInfo& sprite,
+                    int32_t x,
+                    int32_t y,
+                    uint32_t w,
+                    uint32_t h,
+                    uint32_t colour)
+        {
+            rectangle(buf, x, y,
+                      w,
+                      h,
+                      std::get<0>(sprite.uv),
+                      std::get<1>(sprite.uv),
+                      std::get<3>(sprite.uv),
+                      std::get<2>(sprite.uv),
+                      colour,
+                      colour,
+                      colour,
+                      colour
+                     );
+        }
+
+        template <AnyVertexType VT>
+        void scaled_sprite(VertexBuffer<VT>& buf,
+                    const SpriteInfo& sprite,
+                    float scale,
+                    int32_t x,
+                    int32_t y,
+                    uint32_t colour)
+        {
+            rectangle(buf, x, y,
+                      sprite.r.w * scale,
+                      sprite.r.h * scale,
+                      std::get<0>(sprite.uv),
+                      std::get<1>(sprite.uv),
+                      std::get<3>(sprite.uv),
+                      std::get<2>(sprite.uv),
+                      colour,
+                      colour,
+                      colour,
+                      colour
+                     );
+        }
+
+    } // namespace draw    
 }
 
 #endif

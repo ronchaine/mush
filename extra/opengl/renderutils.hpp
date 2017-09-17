@@ -46,12 +46,12 @@ namespace mush::extra::opengl
         Screen_Info<0>::update_size(w, h, set_viewport);
     }
     
-    inline uint32_t screen_width(uint32_t w)
+    inline uint32_t screen_width()
     {
         return Screen_Info<0>::width;
     }
     
-    inline uint32_t screen_height(uint32_t w)
+    inline uint32_t screen_height()
     {
         return Screen_Info<0>::height;
     }
