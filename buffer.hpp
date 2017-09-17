@@ -1,5 +1,5 @@
 /**
- * @file buffer.hpp
+ t @file buffer.hpp
  * @brief Contains definitions and implementation for the Buffer class and associated functions
  * @author Jari Ronkainen
  * @version 1.1
@@ -310,6 +310,25 @@ namespace mush
                 typename remove_cr<decltype(data)>::type t_val;
 
                 if (big_endian())
+                {
+                    t_val = endian_swap(data);
+                    dataptr = (uint8_t*)&t_val;
+                } else {
+                    dataptr = (uint8_t*)&data;
+                }
+
+                for (size_t it = 0; it < sizeof(data); ++it)
+                    this->push_back(*(dataptr+it));
+            }
+
+            inline void write_le(const PODType& data)
+            {
+                this->reserve(this->size() + sizeof(data));
+
+                uint8_t* dataptr = nullptr;
+                typename remove_cr<decltype(data)>::type t_val;
+
+                if (!big_endian())
                 {
                     t_val = endian_swap(data);
                     dataptr = (uint8_t*)&t_val;
