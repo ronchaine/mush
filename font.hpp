@@ -77,33 +77,43 @@ namespace mush
         BitmapFormat    format;
     };
 
-    template <size_t Size, BitmapFormat Format, FontType T>
-    class Font
+    struct Freetype_Basis
     {
         #ifdef MUSH_FREETYPE_FONTS
             static FT_Library library;
             static uint32_t l_count;
             static FT_Face face;
         #endif
+    };
 
+    template <BitmapFormat Format, FontType T>
+    class Font : Freetype_Basis
+    {
         protected:
             std::unordered_map<char32_t, Glyph> cache;
             mush::Buffer font_data;
+
+        public:
+            mush::string        prefix;
+
+            int32_t             line_spacing;
+            int32_t             space_length;
+            const uint32_t      pixel_size;
 
             Font(const mush::string& in_prefix,
                  uint32_t in_size,
                  Buffer data,
                  mush::string load_chars
-                )
+                ) : pixel_size(in_size)
             {
-                // Common for all font types
+                // Common for all font types, incoming font data
                 font_data = data;
 
                 // Freetype Font specific
                 if constexpr(T == FREETYPE_FONT)
                 {
                     #ifdef MUSH_FREETYPE_FONTS
-                    prefix = "freetype/" + in_prefix + "/" + in_size;
+                    prefix = "freetype/" + in_prefix + "/" + in_size + "/";
 
                     if (l_count == 0) if (FT_Init_FreeType(&library))
                             assert(0 && "FreeType init failed");
@@ -114,15 +124,18 @@ namespace mush
                         assert(0 && "Freetype error: couldn't create new face from memory buffer");
 
                     FT_Select_Charmap(face, ft_encoding_unicode);
-                    FT_Set_Pixel_Sizes(face, 0, Size);
+                    FT_Set_Pixel_Sizes(face, 0, in_size);
         
                     line_spacing = (face->height >> 6);
 
                     FT_Load_Char(face, ' ', FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
                     space_length = face->glyph->advance.x >> 6;
 
+                    std::cout << "initialising...\n";
                     for (char32_t c : load_chars)
                         add_glyph(c);
+                    
+                    std::cout << "done.\n";
                     #else
                     static_assert(dependent_false<decltype(T)>(), "Freetype fonts not available, define MUSH_FREETYPE_FONTS?");
                     #endif
@@ -139,12 +152,6 @@ namespace mush
                     prefix = in_prefix;
             }
 
-        public:
-            const mush::string  prefix;
-
-            int32_t             line_spacing;
-            int32_t             space_length;
-
            ~Font()
             {
                 if constexpr (T == FREETYPE_FONT)
@@ -159,7 +166,7 @@ namespace mush
                 }
             }
 
-            Glyph glyph(char32_t c)
+            Glyph& glyph(char32_t c)
             {
                 return cache[c];
             }
@@ -181,14 +188,20 @@ namespace mush
                         return false;
                     }
 
-                    glyph[c].metrics.advance = face->glyph->advance.x >> 6;
-                    glyph[c].vertical_advance = 0;
-                    glyph[c].left = face->glyph->bitmap_left;
-                    glyph[c].top = face->glyph->bitmap_top;
-                    glyph[c].width = face->glyph->bitmap.width;
-                    glyph[c].height = face->glyph->bitmap.rows;
+                    if (cache.count(c) != 0)
+                    {
+                        std::cout << "glyph '" << c << "' already in font cache\n";
+                        return false;
+                    }
 
-                    return update_glyph_data(c, face->glyph->bitmap.width, face->glyph->bitmap.rows, face->glyph->bitmap.buffer);
+                    cache[c].metrics.advance = face->glyph->advance.x >> 6;
+                    cache[c].metrics.vertical_advance = 0;
+                    cache[c].metrics.left = face->glyph->bitmap_left;
+                    cache[c].metrics.top = face->glyph->bitmap_top;
+                    cache[c].metrics.width = face->glyph->bitmap.width;
+                    cache[c].metrics.height = face->glyph->bitmap.rows;
+
+                    return update_glyph_data(c, face->glyph->bitmap.width, face->glyph->bitmap.rows, 1, face->glyph->bitmap.buffer);
                     #else
                     static_assert(dependent_false<decltype(T)>(), "Freetype fonts not available, define MUSH_FREETYPE_FONTS when building?");
                     #endif
@@ -206,11 +219,17 @@ namespace mush
             bool update_glyph_data(char32_t c, int w, int h, int ch, void* data)
             {
                 if (ch == 0)
+                {
+                    std::cout << " FAILED: 0-size image data\n";
                     return false;
+                }
                 if (w * h == 0)
+                {
+                    std::cout << " Can't read data for glyph " << prefix + c << ":";
+                    std::cout << " FAILED: undimensioned image data (no glyph available)\n";
+                    cache.erase(c);
                     return false;
-                if (cache.count(c) != 0)
-                    return false;
+                }
 
                 Buffer bmdata;
 
@@ -284,14 +303,18 @@ namespace mush
                 return true;
             }
 
-        #ifdef MUSH_FREETYPE_FONTS
-        template <size_t Siz, BitmapFormat Fmt = RGBA>
-        static mush::Font<Siz, Fmt, FREETYPE_FONT> load_freetype(const mush::string& file)
-        {
-            return mush::Font<Siz, Fmt, FREETYPE_FONT>(file, file_to_buffer(file), "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'");
-        }
-        #endif
     };
+    #ifdef MUSH_FREETYPE_FONTS
+    FT_Library Freetype_Basis::library;
+    uint32_t Freetype_Basis::l_count;
+    FT_Face Freetype_Basis::face;
+
+    template <BitmapFormat Fmt = RGBA>
+    static mush::Font<Fmt, FREETYPE_FONT> load_freetype(const mush::string& file, uint32_t size)
+    {
+        return mush::Font<Fmt, FREETYPE_FONT>(file, size, file_to_buffer(file), "1234567890AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'");
+    }
+    #endif
 }
 
 #endif
