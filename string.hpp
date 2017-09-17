@@ -648,6 +648,11 @@ namespace mush
             bool operator<(const string& other) const;
             bool operator>(const string& other) const;
 
+            char32_t operator[](const int index) const
+            {
+                return *(data.begin() + index);
+            }
+
             // string pointer
             inline const char32_t* ptr() const { return &data[0]; }
 
@@ -968,7 +973,7 @@ namespace mush
         string rval;
         for (uint32_t it = pos; it < pos + len; ++it)
         {
-            if (it > data.size())
+            if (it >= data.size())
                 return rval;
             rval.data.push_back(data[it]);
         }
