@@ -561,7 +561,10 @@ namespace utf8
 namespace mush
 {
     template <typename T>
-    concept bool IntegralType = std::is_integral<T>::value;
+    concept bool IntegerType = std::is_integral<T>::value 
+                            && !std::is_same<T,char32_t>::value
+                            && !std::is_same<T,char16_t>::value
+                            && !std::is_same<T,char>::value;
     
     template <typename T>
     concept bool FloatingType = std::is_floating_point<T>::value;
@@ -616,8 +619,9 @@ namespace mush
             }
             */
 
-            string(IntegralType value)
+            string(IntegerType value)
             {
+                std::cout << "integral type conversion\n";
                 std::string result = std::to_string(value);
                 utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
             }
@@ -669,7 +673,7 @@ namespace mush
             std::vector<string> split(const string& delim = " \n\t") const;
 
             // return integer value
-            template<IntegralType T>
+            template<IntegerType T>
             T to_value()
             {
                 return strtoul(this->std_str().c_str(), nullptr, 0);
