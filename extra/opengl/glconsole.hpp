@@ -34,7 +34,7 @@ namespace mush::extra::opengl::console
                     return opts[str];
             }
 
-            template<IntegralType T>
+            template<IntegerType T>
             T as_value(const mush::string& str)
             {
                 if (opts.count(str) == 0)
@@ -506,7 +506,7 @@ namespace mush::extra::opengl::console
                         if (!spritesheet->has(fptr->prefix + c))
                             spritesheet->add(fptr->prefix + c, &fptr->glyph(c).bitmap[0], glyph_metrics.width, glyph_metrics.height);
                     } else {
-                        assert(0 && "reached unreachable code at " __FILE__ && __LINE__);
+                        assert(0 && "reached unreachable code at glconsole.hpp:509");
                     }
 
                     draw::sprite(*vbuf_ptr, (*spritesheet)[*prefix + c], cursor.x, cursor.y - glyph_metrics.top + pixel_size, colour);

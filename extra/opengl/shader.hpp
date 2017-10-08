@@ -193,6 +193,12 @@ namespace mush::extra::opengl
             Shader(const Shader& other) = delete;
             Shader(Shader& other) = delete;
 
+            // but allow moving
+            Shader operator=(Shader&& other)
+            {
+                return Shader(std::forward<Shader>(other));
+            }
+
             Shader()
             {
                 program = 0;
