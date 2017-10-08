@@ -131,11 +131,9 @@ namespace mush
                     FT_Load_Char(face, ' ', FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
                     space_length = face->glyph->advance.x >> 6;
 
-                    std::cout << "initialising...\n";
                     for (char32_t c : load_chars)
                         add_glyph(c);
                     
-                    std::cout << "done.\n";
                     #else
                     static_assert(dependent_false<decltype(T)>(), "Freetype fonts not available, define MUSH_FREETYPE_FONTS?");
                     #endif
@@ -214,6 +212,7 @@ namespace mush
                 {
                     static_assert(dependent_false<decltype(T)>(), "Unknown font format");
                 }
+                return true;
             }
 
             bool update_glyph_data(char32_t c, int w, int h, int ch, void* data)
