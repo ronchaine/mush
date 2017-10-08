@@ -621,7 +621,6 @@ namespace mush
 
             string(IntegerType value)
             {
-                std::cout << "integral type conversion\n";
                 std::string result = std::to_string(value);
                 utf8::utf8to32(result.begin(), result.end(), back_inserter(data));
             }
