@@ -189,15 +189,19 @@ namespace mush::extra::opengl
         public:
             typedef VT vertex_type;
 
+            bool ok() const { return program != 0; }
+
             // do not allow copies
             Shader(const Shader& other) = delete;
             Shader(Shader& other) = delete;
 
+            /*
             // but allow moving
             Shader operator=(Shader&& other)
             {
                 return Shader(std::forward<Shader>(other));
             }
+            */
 
             Shader()
             {
@@ -215,18 +219,15 @@ namespace mush::extra::opengl
                 int vertex_shader, fragment_shader;
                 int status;
 
-                std::cout << "Compiling shaders...\n";
-
                 vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-                std::cout << "  created shader " << vertex_shader << "\n";
                 glShaderSource(vertex_shader, 1, &vertex_source, 0);
-                std::cout << "  source code read\n";
                 glCompileShader(vertex_shader);
                 glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &status);
 
                 if (!status)
                 {
                     std::cout << "Vertex shader compile error" << "\n";
+                    std::cout << vertex_source << "\n";
                     GLint maxLength = 0;
                     glGetShaderiv(vertex_shader, GL_INFO_LOG_LENGTH, &maxLength);
 
@@ -240,8 +241,6 @@ namespace mush::extra::opengl
                     program = 0;
                     return;
                 }
-
-                std::cout << "  vertex shader compiled\n";
 
                 fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
                 glShaderSource(fragment_shader, 1, &fragment_source, 0);
@@ -266,8 +265,6 @@ namespace mush::extra::opengl
                     return;;
                 }
 
-                std::cout << "  fragment shader compiled\n";
-
                 program = glCreateProgram();
                 glAttachShader(program, vertex_shader);
                 glAttachShader(program, fragment_shader);
@@ -281,7 +278,6 @@ namespace mush::extra::opengl
                     program = 0;
                     return;
                 }
-                std::cout << "  program " << program << " linked\n";
                 return;
             }
 

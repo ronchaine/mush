@@ -9,16 +9,6 @@
 
 namespace mush::extra::opengl
 {
-    // first some voodoo to keep this stuff header-only and keep
-    // ourselves consistent with render target
-    template <uint32_t Dummy = 0>
-    struct RenderTarget_Base
-    {
-        static GLuint           current_target;
-    };
-    template <uint32_t Dummy>
-    GLuint RenderTarget_Base<Dummy>::current_target;
-
     template <uint32_t Display = 0>
     struct Screen_Info
     {
@@ -29,9 +19,10 @@ namespace mush::extra::opengl
         {
             width = w;
             height = h;
-            
+            /*
             if (RenderTarget_Base<0>::current_target == 0 && set_view)
                 glViewport(0,0,w,h);
+            */
         }
     };
 
@@ -56,21 +47,24 @@ namespace mush::extra::opengl
         return Screen_Info<0>::height;
     }
 
-    template <uint32_t MRTLevel>
-    class RenderTarget : RenderTarget_Base<0>
+    class RenderTarget
     {
         private:
+            static GLuint           current_target;
+
             GLuint                  id;
             GLuint                  depth_buffer;
 
             const uint32_t          width, height;
 
-            Texture                 colour_attachments[MRTLevel];
+            std::vector<Texture>    colour_attachments;
 
         public:
-            RenderTarget(uint32_t width, uint32_t height, bool add_depth = false)
+            RenderTarget(uint32_t width, uint32_t height, bool add_depth = false, uint32_t mrt_level = 1)
                 : width(width), height(height)
             {
+                colour_attachments.resize(mrt_level);
+
                 glGenFramebuffers(1, &id);
                 glBindFramebuffer(GL_FRAMEBUFFER, id);
 
@@ -84,9 +78,9 @@ namespace mush::extra::opengl
                     depth_buffer = 0;
                 }
 
-                GLenum drawbuffers[MRTLevel];
+                GLenum drawbuffers[mrt_level];
 
-                for (uint32_t i = 0; i < MRTLevel; ++i)
+                for (uint32_t i = 0; i < mrt_level; ++i)
                 {
                     colour_attachments[i].init(width, height, 4);
                     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, colour_attachments[i].id(), 0);
@@ -117,6 +111,9 @@ namespace mush::extra::opengl
 
             static void unset()
             {
+                if (current_target == 0)
+                    return;
+
                 current_target = 0;
                 glViewport(0.0, 0.0, Screen_Info<0>::width, Screen_Info<0>::height);
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
