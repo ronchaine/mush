@@ -1,5 +1,5 @@
-#ifndef MUSH_SHAPES_HEADER
-#define MUSH_SHAPES_HEADER
+#ifndef MUSH_GEOMETRIC_TYPES_HEADER
+#define MUSH_GEOMETRIC_TYPES_HEADER
 
 #include <cstdint>
 #include <tuple>

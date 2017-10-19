@@ -4,346 +4,161 @@
 #include <memory>
 #include <functional>
 
-#include "error.hpp"
-
-class EmptyClass {};
-
-template <bool B, class T = EmptyClass>
-struct derive_if {};
-
-template <class T>
-struct derive_if<true, T> : public T {};
-
-template <typename Value,
-          bool IsReference = std::is_reference<Value>::value>
-          //typename Base = derive_if<!std::is_fundamental<Value>::value, Value>>
-class Result// : public Base
+namespace mush
 {
-    private:
-        Value value;
-        Error error;
-        
-        bool has_result;
-
-    public:
-        Result() : error(get_error_type<err_uninitialised_value>()), has_result(false) {}
-
-        Result(const Value& rhs) : value(rhs), has_result(true) {}
-        Result(Value&& rhs) : value(std::move(rhs)), has_result(true) {}
-        Result(const Result& rhs) : has_result(rhs.has_result)
+    template <typename T>
+    concept bool SuitableError = requires(T a)
+    {
         {
-            if (has_result) new (&value) Value(rhs.value);
-            else new (&error) Error(rhs.error);
-        } 
-
-        Result(Result&& rhs) : has_result(rhs.has_result)
-        {
-            if (has_result) new (&value) Value(std::move(rhs.value));
-            else new (&error) Error(std::move(rhs.error));
+           // a.msg()
+            true
         }
+    };
+    
+    struct Basic_Error
+    {
+    };
 
-        Result(const Error& err) : error(err), has_result(false) {}
-        Result(Error&& err) : error(std::move(err)), has_result(false) {}
+    // Result for non-void non-reference type
+    template <typename ValueType, SuitableError ErrorType, bool IsReference>
+    class Basic_Result
+    {
+        private:
+            ValueType value;
+            ErrorType error;
 
-        Result& operator=(const Value& rhs)
-        {
-            has_result = true;
-            value = rhs;
+            bool has_result;
 
-            return *this;
-        }
+        public:
+//            constexpr Basic_Result(ErrorType err) { has_result = false; error = err; }
+//            constexpr Basic_Result(ValueType val) { has_result = true;  value = val; }
 
-        Result& operator=(Value&& rhs)
-        {
-            has_result = true;
-            value = std::move(rhs);
+            // default constructor
+            Basic_Result() : has_result(false) {}
 
-            return *this;
-        }
-
-        Result& operator=(Result rhs)
-        {
-            rhs.swap(*this);
-            return *this;
-        }
-
-        ~Result()
-        {
-            if (has_result)
-                value.~Value();
-            else
-                error.~Error();
-        }
-
-        operator bool()
-        {
-            return has_result;
-        }
-        
-        // Rust unwrap()
-        operator Value&()
-        {
-            // use unwrap() with nontrivial types
-            static_assert(std::is_trivial<Value>::value && "Non-trivial types require you to use unwrap()");
-            if (has_result)
-                return value;
-            else
+            // Create from result
+            // Basic_Result(Basic_Result&& rhs) = default;
+            Basic_Result(const Basic_Result& rhs) : has_result(rhs.has_result)
             {
-                std::cout << "aborted trying to use invalid value: " << error.what() << "\n";
-                std::abort();
+                if (has_result) value = rhs.value;
+                else error = rhs.error;
             }
-        }
 
-        // Rust unwrap() for constants
-        operator const Value&() const
-        {
-            // use unwrap() with nontrivial types
-            static_assert(std::is_trivial<Value>::value && "Non-trivial types require you to use unwrap()");
-            if (has_result)
-                return value;
-            else
+            // create from values
+            Basic_Result(const ValueType& rhs) : value(rhs), has_result(true) {}
+            Basic_Result(ValueType&& rhs) : value(std::forward<ValueType>(rhs)), has_result(true) {}
+
+            // create from errors
+            Basic_Result(const ErrorType& err) : error(err), has_result(false) {}
+            Basic_Result(ErrorType&& err) : error(std::forward<ErrorType>(err)), has_result(false) {}
+
+            // assignments
+            Basic_Result& operator=(const ValueType& rhs)
             {
-                std::cout << "aborted trying to use invalid value: " << error.what() << "\n";
-                std::abort();
-            }
-        }
-
-        bool is_ok() const { return has_result; }
-        bool is_err() const { return !has_result; }
-
-        const Error& get_error() const { return error; }
-
-        Value match(std::function<Value(Error&)> handler)
-        {
-            if (has_result)
-                return value;
-
-            return handler(error);
-        }
-
-        Value value_or(Value v)
-        {
-            if (has_result)
-                return value;
-            
-            return v;
-        }
-
-        Value unwrap()
-        {
-            if (has_result)
-                return std::move(value);
-            else
-            {
-                std::cout << "aborted trying to use invalid value: " << error.what() << "\n";
-                std::abort();
-            }
-        }
-        
-        void swap(Result& rhs)
-        {
-            if (has_result)
-            {
-                if (rhs.has_result)
-                {
-                    std::swap(value, rhs.value);
-                } else {
-                    auto t = std::move(rhs.error);
-                    new(&rhs.value) Value(std::move(value));
-                    new(&error) Error(t);
-                    std::swap(value, rhs.value);
-                    std::swap(has_result, rhs.has_result);
-                }
-            } else {
-                if (rhs.has_result)
-                {
-                    rhs.swap(*this);
-                } else {
-                    std::swap(error, rhs.error);
-                    std::swap(value, rhs.value);
-                }
-            }
-        }
-};
-
-// Result for reference types
-template <typename Value>
-class Result<Value, true>
-{
-    private:
-        typename std::remove_reference<Value>::type* value;
-        Error error;
-
-        bool has_result;
-        
-    public:
-        Result() : error(get_error_type<err_uninitialised_value>()), has_result(false) {}
-        
-        Result(const Value rhs) : value(&rhs), has_result(true) {}
-        
-        Result(const Result& rhs) : has_result(rhs.has_result)
-        {
-            if (has_result) value = rhs.value;
-            else new (&error) Error(rhs.error);
-        } 
-        
-        Result(const Error& err) : error(err), has_result(false) {}
-        Result(Error&& err) : error(std::move(err)), has_result(false) {}
-
-        Result& operator=(const Value rhs)
-        {
-            has_result = true;
-            value = &rhs;
-
-            return *this;
-        }
-
-        Result& operator=(Result rhs)
-        {
-            rhs.swap(*this);
-            return *this;
-        }
-
-        ~Result()
-        {
-            if (!has_result)
-                error.~Error();
-        }
-
-        operator bool()
-        {
-            return has_result;
-        }
-
-        // Rust unwrap()
-        operator Value&()
-        {
-            if (has_result)
-                return *value;
-            else
-            {
-                std::cout << "aborted trying to use invalid value: " << error.what() << "\n";
-                std::abort();
-            }
-        }
-
-        // Rust unwrap() for constants
-        operator const Value&() const
-        {
-            if (has_result)
-                return *value;
-            else
-            {
-                std::cout << "aborted trying to use invalid value: " << error.what() << "\n";
-                std::abort();
-            }
-        }
-
-        bool is_ok() const { return has_result; }
-        bool is_err() const { return !has_result; }
-
-        const Error& get_error() const { return error; }
-
-        Value match(std::function<Value(Error&)> handler)
-        {
-            if (has_result)
-                return *value;
-
-            return handler(error);
-        }
-
-        Value value_or(Value v)
-        {
-            if (has_result)
-                return *value;
-            
-            return v;
-        }
-
-        Value& unwrap()
-        {
-            if (has_result)
-                return *value;
-            else
-            {
-                std::cout << "aborted trying to use invalid value: " << error.what() << "\n";
-                std::abort();
-            }
-        }
-
-        void swap(Result& rhs)
-        {
-            if (has_result)
-            {
-                if (rhs.has_result)
-                {
-                    std::swap(value, rhs.value);
-                } else {
-                    auto t = std::move(rhs.error);
-                    new(&rhs.value) Value(std::move(value));
-                    new(&error) Error(t);
-                    std::swap(value, rhs.value);
-                    std::swap(has_result, rhs.has_result);
-                }
-            } else {
-                if (rhs.has_result)
-                {
-                    rhs.swap(*this);
-                } else {
-                    std::swap(error, rhs.error);
-                    std::swap(value, rhs.value);
-                }
-            }
-        }
-};
-
-template <>
-class Result<void>
-{
-    private:
-        Error error;
-        
-        bool has_result;
-
-        Result() : has_result(true) {}
-
-    public:
-        constexpr Result(const char* msg, bool value = false) : error(false), has_result(value) {
-            internal::errormsg<0> = msg;
-        }
-        
-        Result(const Result& rhs) : has_result(rhs.has_result)
-        {
-            if (!has_result) new (&error) Error(rhs.error);
-        } 
-        Result(Result&& rhs) : has_result(rhs.has_result)
-        {
-            if (!has_result) new (&error) Error(std::move(rhs.error));
-        }
-
-        Result(const Error& err) : error(err), has_result(false) {}
-        Result(Error&& err) : error(std::move(err)), has_result(false) {}
-
-        ~Result()
-        {
-            if (!has_result)
-                error.~Error();
-        }
-        
-        bool is_ok() const { return has_result; }
-        bool is_err() const { return !has_result; }
-        
-        Result<void>& match(std::function<void(Error&)> handler)
-        {
-            if (has_result)
+                has_result = true;
+                value = rhs;
                 return *this;
+            }
+            Basic_Result& operator=(ValueType&& rhs)
+            {
+                has_result = true;
+                value = std::forward(rhs);
+                return *this;
+            }
+            //Basic_Result& operator=(Result rhs)
 
-            handler(error);
-            has_result = true;
-            return *this;
-        }
-};
+            // conversions
+            operator bool() { return has_result; }
 
-const static auto result_ok = Result<void>("no error", true);
+            // matching
+            ValueType&& match(std::function<ValueType(ErrorType&)> handler)
+            {
+                if (has_result)
+                {
+                    has_result = false;
+                    return std::move(value);
+                }
 
+                return handler(error);
+            }
+    };
+    
+    // Result for reference type
+    template <typename ValueType, SuitableError ErrorType>
+    class Basic_Result<ValueType, ErrorType, true>
+    {
+        private:
+            typename std::remove_reference<ValueType>::type* value;
+            ErrorType error;
+
+            bool has_result;
+
+        public:
+            constexpr Basic_Result(ErrorType err) { has_result = false; error = err; }
+            constexpr Basic_Result(ValueType val) { has_result = true;  value = val; }
+
+            // default constructor
+            Basic_Result() : has_result(false) {}
+
+            // results
+            Basic_Result(const Basic_Result& rhs) : has_result(rhs.has_result)
+            {
+                if (has_result) value = rhs.value;
+                else error = rhs.error;
+            }
+
+            // values
+            Basic_Result(const ValueType& rhs) : value(rhs), has_result(true) {}
+            Basic_Result(ValueType&& rhs) : value(std::forward<ValueType>(rhs)), has_result(true) {}
+
+            // create from errors
+            Basic_Result(const ErrorType& err) : error(err), has_result(false) {}
+            Basic_Result(ErrorType&& err) : error(std::forward<ErrorType>(err)), has_result(false) {}
+
+            Basic_Result& operator=(const ValueType rhs)
+            {
+                has_result = true;
+                value = &rhs;
+            }
+            //Basic_Result& operator=(Basic_Result rhs) = default
+
+            operator bool() { return has_result; }
+    };
+
+    // Result for void type
+    template <SuitableError ErrorType>
+    class Basic_Result<void, ErrorType, false>
+    {
+        private:
+            ErrorType error;
+            bool has_result;
+
+        public:
+            constexpr Basic_Result(bool) : error(), has_result(true) {}
+            constexpr Basic_Result(bool, ErrorType err) : error(err), has_result(false) {}
+
+//            constexpr static Basic_Result<void, ErrorType, false> OK = Basic_Result(true);
+
+            Basic_Result() : has_result(false) {}
+            
+            Basic_Result(const ErrorType& err) : error(err), has_result(false) {}
+            Basic_Result(ErrorType&& err) : error(std::move(err)), has_result(false) {}
+            
+            void match(std::function<void(ErrorType&)> handler)
+            {
+                if (has_result)
+                    return;
+
+                return handler(error);
+            }
+    };
+
+    template <typename ValueType, SuitableError ErrorType, bool IsReference>
+    Basic_Result<ValueType, ErrorType, IsReference> make_result(bool)
+    {
+    }
+
+    template <typename ValueType, bool IsReference = std::is_reference<ValueType>::value>
+    using Result = Basic_Result<ValueType, Basic_Error, IsReference>;
+}
 #endif

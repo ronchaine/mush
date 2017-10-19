@@ -162,4 +162,18 @@ namespace mush
     };
 }
 
+namespace std
+{
+    template <uint32_t Precision, mush::SuitableBaseType Basetype>
+    struct is_arithmetic<mush::Fixed<Precision, Basetype>>
+    {
+        constexpr static bool value = true;
+
+        operator bool()
+        {
+            return value;
+        }
+    };
+}
+
 #endif

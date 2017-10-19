@@ -19,13 +19,22 @@ namespace mush::extra::opengl
         {
             width = w;
             height = h;
-            /*
-            if (RenderTarget_Base<0>::current_target == 0 && set_view)
-                glViewport(0,0,w,h);
-            */
+            
+            glViewport(0,0,w,h);
         }
     };
 
+    namespace detail
+    {
+        template <uint32_t Dummy = 0>
+        struct Global_Members
+        {
+            static GLuint current_target;
+        };
+        
+        template <uint32_t Dummy>
+        GLuint Global_Members<Dummy>::current_target;
+    }
     // instantiate as used
     template <uint32_t Display>
     uint32_t Screen_Info<Display>::width;
@@ -50,8 +59,6 @@ namespace mush::extra::opengl
     class RenderTarget
     {
         private:
-            static GLuint           current_target;
-
             GLuint                  id;
             GLuint                  depth_buffer;
 
@@ -91,6 +98,8 @@ namespace mush::extra::opengl
 
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
                     assert(0 && "Failed to create render target");                
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
             }
 
            ~RenderTarget()
@@ -100,10 +109,10 @@ namespace mush::extra::opengl
 
             void use()
             {
-                if (current_target == id)
+                if (detail::Global_Members<0>::current_target == id)
                     return;
 
-                current_target = id;
+                detail::Global_Members<0>::current_target = id;
 
                 glViewport(0.0, 0.0, width, height);
                 glBindFramebuffer(GL_FRAMEBUFFER, id);
@@ -111,12 +120,20 @@ namespace mush::extra::opengl
 
             static void unset()
             {
-                if (current_target == 0)
+                if (detail::Global_Members<0>::current_target == 0)
                     return;
 
-                current_target = 0;
+                detail::Global_Members<0>::current_target = 0;
                 glViewport(0.0, 0.0, Screen_Info<0>::width, Screen_Info<0>::height);
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            }
+
+            Texture& get_texture(uint32_t index = 0)
+            {
+                if (index > colour_attachments.size())
+                    return colour_attachments[0];
+
+                return colour_attachments[index];
             }
     };
 
