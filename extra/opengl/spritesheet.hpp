@@ -24,7 +24,7 @@ namespace mush::extra::opengl
             Texture         texture;
             RectanglePack   atlas;
 
-            std::unordered_map<mush::string, mush::Rectangle> stored;
+            std::unordered_map<mush::String, mush::Rectangle> stored;
 
         public:
             SpriteSheet(uint32_t w = 1024, uint32_t h = 1024)
@@ -50,7 +50,7 @@ namespace mush::extra::opengl
                 return stored.size();
             }
 
-            SpriteInfo operator[](const mush::string& name)
+            SpriteInfo operator[](const mush::String& name)
             {
                 SpriteInfo rval;
                 rval.r = get_rect(name);
@@ -58,7 +58,7 @@ namespace mush::extra::opengl
                 return rval;
             }
 
-            mush::Rectangle get_rect(const mush::string& name)
+            mush::Rectangle get_rect(const mush::String& name)
             {
                 mush::Rectangle rval;
                 if (stored.count(name) != 0)
@@ -67,7 +67,7 @@ namespace mush::extra::opengl
                 return rval;
             }
 
-            auto get_uv(const mush::string& name, uint32_t flags = 0)
+            auto get_uv(const mush::String& name, uint32_t flags = 0)
             {
                 uint16_t left;
                 uint16_t right;
@@ -85,7 +85,7 @@ namespace mush::extra::opengl
                 return std::make_tuple(left, right, top, bottom);
             }
 
-            void add(const mush::string& name, void* data, uint32_t w, uint32_t h, uint32_t ch = 4)
+            void add(const mush::String& name, void* data, uint32_t w, uint32_t h, uint32_t ch = 4)
             {
                 mush::Rectangle r = atlas.fit(w, h);
                 if (r == mush::Rectangle{0,0,0,0})
@@ -102,7 +102,7 @@ namespace mush::extra::opengl
                 texture.update(data, r.x, r.y, r.w, r.h);
             }
 
-            bool has(const mush::string& name)
+            bool has(const mush::String& name)
             {
                 return (stored.count(name) != 0);
             }

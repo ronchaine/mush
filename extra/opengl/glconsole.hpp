@@ -13,7 +13,7 @@ namespace mush::extra::opengl::console
     class Options
     {
         private:
-            std::unordered_map<mush::string, mush::string> opts;
+            std::unordered_map<mush::String, mush::String> opts;
 
         public:
             Options()
@@ -26,7 +26,7 @@ namespace mush::extra::opengl::console
                 opts.clear();
             }
 
-            mush::string operator[](const mush::string& str)
+            mush::String operator[](const mush::String& str)
             {
                 if (opts.count(str) == 0)
                     return OPT_NULL;
@@ -35,7 +35,7 @@ namespace mush::extra::opengl::console
             }
 
             template<IntegerType T>
-            T as_value(const mush::string& str)
+            T as_value(const mush::String& str)
             {
                 if (opts.count(str) == 0)
                     return 0;
@@ -43,9 +43,9 @@ namespace mush::extra::opengl::console
                 return strtol(opts[str].std_str().c_str(), nullptr, 0);
             }
 
-            void parse(const mush::string& str)
+            void parse(const mush::String& str)
             {
-                for (mush::string opt : str.split(","))
+                for (mush::String opt : str.split(","))
                 {
                     for (size_t i = 0; i < opt.length(); ++i)
                     {
@@ -98,7 +98,7 @@ namespace mush::extra::opengl::console
             static constexpr SeqType INVALID_SEQUENCE       = ~0b1;
             static constexpr SeqType UNKNOWN_SEQUENCE       = ~0;
 
-            mush::string seq;
+            mush::String seq;
     };
 
     SeqInfo get_seq(mush::AnyString str, size_t& pos)
@@ -127,7 +127,7 @@ namespace mush::extra::opengl::console
                     if (osiz == pos)
                         break;
 
-                    mush::string ss = str.substr(osiz, pos - osiz);
+                    mush::String ss = str.substr(osiz, pos - osiz);
                     opc = ss.to_value<int>();
                     break;
                 }
@@ -338,7 +338,7 @@ namespace mush::extra::opengl::console
 
             void write(const char* tbs)
             {
-                write(mush::string(tbs));
+                write(mush::String(tbs));
             }
 
             void write(mush::AnyString tbs)
@@ -349,7 +349,7 @@ namespace mush::extra::opengl::console
                 int32_t space_length;
                 int32_t line_spacing;
                 int32_t pixel_size;
-                mush::string* prefix;
+                mush::String* prefix;
 
                 // prepare variables
                 if (font.type == FREETYPE_FONT)
@@ -517,7 +517,7 @@ namespace mush::extra::opengl::console
                 }
             }
 
-            int get_nlh(const mush::string& str, size_t pos, size_t pixel_size)
+            int get_nlh(const mush::String& str, size_t pos, size_t pixel_size)
             {
                 int rval = 0;
                 for (size_t i = pos; i < str.length(); ++i)
@@ -616,7 +616,7 @@ namespace mush::extra::opengl::console
                 {
                     Options opts;
 
-                    std::vector<mush::string> values;
+                    std::vector<mush::String> values;
                     // each part after first is a name of the cached image
 
                     for (size_t i = 1; i < seq_blocks.size(); ++i)
@@ -671,15 +671,15 @@ namespace mush::extra::opengl::console
             template <typename... Ts>
             void write(Ts... t)
             {
-                mush::string cs = (... + mush::string(t));
+                mush::String cs = (... + mush::String(t));
                 write(cs);
             }
 
     };
 
-    inline mush::string colour(uint32_t c)
+    inline mush::String colour(uint32_t c)
     {
-        mush::string r;
+        mush::String r;
         r = "\x1b]667;rgba;";
         char values[9];
         sprintf(&values[0], "%08x", c);
@@ -689,14 +689,14 @@ namespace mush::extra::opengl::console
     }
 
     template <typename... Args>
-    inline mush::string image(const mush::string& s, Args... args)
+    inline mush::String image(const mush::String& s, Args... args)
     {
-        mush::string r = "\x1b]667;cimg;";
+        mush::String r = "\x1b]667;cimg;";
         r += s;
         if (sizeof...(args) > 0)
         {
             r += ":";
-            r += (... + mush::string(args));
+            r += (... + mush::String(args));
         }
         r += ";\x07";
         return r;

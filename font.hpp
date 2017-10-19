@@ -94,16 +94,16 @@ namespace mush
             mush::Buffer font_data;
 
         public:
-            mush::string        prefix;
+            mush::String        prefix;
 
             int32_t             line_spacing;
             int32_t             space_length;
             const uint32_t      pixel_size;
 
-            Font(const mush::string& in_prefix,
+            Font(const mush::String& in_prefix,
                  uint32_t in_size,
                  Buffer data,
-                 mush::string load_chars
+                 mush::String load_chars
                 ) : pixel_size(in_size)
             {
                 // Common for all font types, incoming font data
@@ -182,7 +182,7 @@ namespace mush
                     assert(face);
                     if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT))
                     {
-                        std::cout << "Can't load glyph '" << mush::string(c) << "'!\n";
+                        std::cout << "Can't load glyph '" << mush::String(c) << "'!\n";
                         return false;
                     }
 
@@ -309,7 +309,7 @@ namespace mush
     FT_Face Freetype_Basis::face;
 
     template <BitmapFormat Fmt = RGBA>
-    static mush::Font<Fmt, FREETYPE_FONT> load_freetype(const mush::string& file, uint32_t size)
+    static mush::Font<Fmt, FREETYPE_FONT> load_freetype(const mush::String& file, uint32_t size)
     {
         return mush::Font<Fmt, FREETYPE_FONT>(file, size, file_to_buffer(file), "1234567890AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'");
     }

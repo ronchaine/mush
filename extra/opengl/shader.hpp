@@ -114,10 +114,10 @@ namespace mush::extra::opengl
                 GLint location;
                 GLint program;
                 
-                mush::string name;
+                mush::String name;
 
                 public:
-                    UniformProxy(const mush::string& name, GLint program) : program(program), name(name)
+                    UniformProxy(const mush::String& name, GLint program) : program(program), name(name)
                     {
                         while (glGetError() != GL_NO_ERROR);
 
@@ -283,7 +283,7 @@ namespace mush::extra::opengl
 
             void load_spirv();
 
-            inline UniformProxy operator[](const mush::string& name)
+            inline UniformProxy operator[](const mush::String& name)
             {
                 assert(program != 0);
                 return UniformProxy(name, program);
