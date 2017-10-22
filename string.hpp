@@ -53,6 +53,7 @@ namespace mush
             byte = *(in+2);
             if (!((byte & 0xc0) == 0x80)) return 3;
             ref |= (byte & 0x3f);
+            return 3;
         } else if ((byte & 0xf8) == 0xf0) {
             ref = (byte & 0x07) << 18;
             byte = *(in+1);
@@ -64,6 +65,7 @@ namespace mush
             byte = *(in+3);
             if (!((byte & 0xc0) == 0x80)) return 4;
             ref |= (byte & 0x3f);
+            return 4;
         }
 
         return 0;
@@ -105,7 +107,9 @@ namespace mush
     {
         private:
             std::vector<char32_t> data;
-        public: 
+        public:
+            constexpr static char   END_OF_FILE[] = "<MUSH_EOF>";
+
             typedef char32_t        value_type;
             typedef char32_t&       reference;
             typedef const char32_t& const_reference;
@@ -367,10 +371,10 @@ namespace mush
             }
 
             template <IntegerType T>
-            T to_value() { return strtol(std_str().c_str(), nullptr, 0); }
+            T to_value() const { return strtol(std_str().c_str(), nullptr, 0); }
 
             template <FloatingType T>
-            T to_value() { return atof(std_str().c_str()); }
+            T to_value() const { return atof(std_str().c_str()); }
             //! Generate substring
             /*!
                 Returns a newly constructed string object with its value initialised to
@@ -426,9 +430,9 @@ namespace mush
             inline size_t hash() const noexcept
             {
                 std::abort();
-            }
+            }        
     };
-
+    
     // 64-bit hash implementation
     template<> inline size_t String::hash<8>() const noexcept
     {
