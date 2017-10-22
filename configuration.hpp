@@ -44,77 +44,6 @@ char32_t get_utf32_char(std::istream& in)
 
 namespace mush
 {
-    struct Option
-    {
-        mush::String    name;
-        mush::String    value;        
-    };
-
-    class OptionContainer
-    {
-        private:
-            std::vector<Option> options;
-        public:
-            std::vector<Option>::iterator begin() { return options.begin(); }
-            std::vector<Option>::const_iterator begin() const { return options.begin(); }
-            std::vector<Option>::iterator end() { return options.end(); }
-            std::vector<Option>::const_iterator end() const { return options.end(); }
-
-            bool has(const mush::String& key)
-            {
-                for (auto& opt : options)
-                    if (opt.name == key)
-                        return true;
-
-                return false;
-            }
-
-            mush::String& operator[](const mush::String& key)
-            {
-                for (auto& opt : options)
-                    if (opt.name == key)
-                        return opt.value;
-
-                Option new_opt;
-                new_opt.name = key;
-                options.push_back(new_opt);
-                return options[options.size()-1].value;
-            }
-    };
-    class Configuration
-    {
-        private:
-            OptionContainer option;
-
-        public:
-            std::vector<Option>::iterator begin() { return option.begin(); }
-            std::vector<Option>::iterator end()   { return option.end(); }
-            std::vector<Option>::const_iterator begin() const { return option.begin(); }
-            std::vector<Option>::const_iterator end() const { return option.end(); }
-            
-            void set(const mush::String& key, const mush::String& value)
-            {
-                option[key] = value;
-            }
-            
-            mush::String operator[](const mush::String& key)
-            {
-                if (option.has(key) == 0)
-                    return "";
-
-                return option[key];
-            }
-            
-            friend inline std::ostream& operator<<(std::ostream& out, const Configuration& conf)
-            {
-                for (auto& opt : conf.option)
-                {
-                    out << opt.name << " = " << opt.value << "\n";
-                }
-                return out;
-            }
-    };
-
     mush::String read_stream(std::istream& in, mush::String end = "\n")
     {
         mush::String rval = "";
@@ -181,33 +110,121 @@ namespace mush
         return std::tie(first, second);
     }
 
+    struct Option
+    {
+        mush::String    name;
+        mush::String    value;        
+    };
+
+    class OptionContainer
+    {
+        private:
+            std::vector<Option> options;
+        public:
+            std::vector<Option>::iterator begin() { return options.begin(); }
+            std::vector<Option>::const_iterator begin() const { return options.begin(); }
+            std::vector<Option>::iterator end() { return options.end(); }
+            std::vector<Option>::const_iterator end() const { return options.end(); }
+
+            void clear()
+            {
+                options.clear();
+            }
+
+            bool has(const mush::String& key)
+            {
+                for (auto& opt : options)
+                    if (opt.name == key)
+                        return true;
+
+                return false;
+            }
+
+            mush::String& operator[](const mush::String& key)
+            {
+                for (auto& opt : options)
+                    if (opt.name == key)
+                        return opt.value;
+
+                Option new_opt;
+                new_opt.name = key;
+                options.push_back(new_opt);
+                return options[options.size()-1].value;
+            }
+    };
+    class Configuration
+    {
+        private:
+            OptionContainer option;
+
+        public:
+            std::vector<Option>::iterator begin() { return option.begin(); }
+            std::vector<Option>::iterator end()   { return option.end(); }
+            std::vector<Option>::const_iterator begin() const { return option.begin(); }
+            std::vector<Option>::const_iterator end() const { return option.end(); }
+            
+            void set(const mush::String& key, const mush::String& value)
+            {
+                option[key] = value;
+            }
+
+            void load_from_ini(std::istream& in)
+            {
+                mush::String line;
+                mush::String section;
+                while ((line = read_stream(in, "\n")) != mush::String::END_OF_FILE)
+                {
+                    if (line.empty())
+                        continue;
+                    // ignore comments
+                    else if (line[0] == ';')
+                        continue;
+                    else if (line[0] == '[')
+                    {
+                        line = strip(line, "\t ");
+                        section = substr_between(line, '[', ']');
+                    }
+                    else
+                    {
+                        if (line.split("=").size() < 2)
+                            continue;
+
+                        mush::String key, value;
+                        key = section + "." + std::get<0>(divide_to_pair(line, '='));
+                        key = strip(key, "\t ");
+                        value = std::get<1>(divide_to_pair(line, '='));
+                        set(key, value);
+                    }
+                }     
+            }
+            
+            mush::String operator[](const mush::String& key)
+            {
+                if (option.has(key) == 0)
+                    return "";
+
+                return option[key];
+            }
+
+            void clear()
+            {
+                option.clear();
+            }
+            
+            friend inline std::ostream& operator<<(std::ostream& out, const Configuration& conf)
+            {
+                for (auto& opt : conf.option)
+                {
+                    out << opt.name << " = " << opt.value << "\n";
+                }
+                return out;
+            }
+    };
+
     Configuration load_ini(std::istream& in)
     {
         Configuration rval;
-        mush::String line;
-        mush::String section;
-        while ((line = read_stream(in, "\n")) != mush::String::END_OF_FILE)
-        {
-            if (line.empty())
-                continue;
-            // ignore comments
-            else if (line[0] == ';')
-                continue;
-            else if (line[0] == '[')
-            {
-                line = strip(line, "\t ");
-                section = substr_between(line, '[', ']');
-            }
-            else
-            {
-                mush::String key, value;
-                key = section + "." + std::get<0>(divide_to_pair(line, '='));
-                key = strip(key, "\t ");
-                value = std::get<1>(divide_to_pair(line, '='));
-                rval.set(key, value);
-            }
-        }
-
+        rval.load_from_ini(in);
         return rval;
     }
 }
