@@ -501,13 +501,20 @@ namespace mush::extra::opengl::console
                         if (!fptr->has_glyph(c))
                             fptr->add_glyph(c);
 
+                        if (!fptr->has_glyph(c))
+                            continue;
+
                         glyph_metrics = fptr->glyph(c).metrics;
 
                         if (!spritesheet->has(fptr->prefix + c))
                             spritesheet->add(fptr->prefix + c, &fptr->glyph(c).bitmap[0], glyph_metrics.width, glyph_metrics.height);
+
                     } else {
                         assert(0 && "reached unreachable code at glconsole.hpp:509");
                     }
+
+                    if (!spritesheet->has(*prefix + c))
+                        continue;
 
                     draw::sprite(*vbuf_ptr, (*spritesheet)[*prefix + c], cursor.x, cursor.y - glyph_metrics.top + pixel_size, colour);
                     //draw::scaled_sprite(*vbuf_ptr, (*spritesheet)[*prefix + c], 2.0f, cursor.x, cursor.y - glyph_metrics.top + pixel_size, colour);

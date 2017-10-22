@@ -38,6 +38,9 @@ namespace mush::extra::opengl
         int w, h, comp;
         uint8_t* data = stbi_load(file, &w, &h, &comp, 0);
 
+        if (data == nullptr)
+            return;
+
         assert (comp == Channels);
 
         if (!data)
