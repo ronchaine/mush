@@ -133,7 +133,7 @@ namespace mush
 
                     for (char32_t c : load_chars)
                         add_glyph(c);
-                    
+
                     #else
                     static_assert(dependent_false<decltype(T)>(), "Freetype fonts not available, define MUSH_FREETYPE_FONTS?");
                     #endif
@@ -179,10 +179,15 @@ namespace mush
                 if constexpr(T == FREETYPE_FONT)
                 {
                     #ifdef MUSH_FREETYPE_FONTS
-                    assert(face);
+                    if (!face)
+                    {
+                        std::cout << "Truetype font has no face\n";
+                        return false;
+                    }
+
                     if (FT_Load_Char(face, c, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT))
                     {
-                        std::cout << "Can't load glyph '" << mush::String(c) << "'!\n";
+                        std::cout << "FT_Load_Char failed: Can't load glyph '" << mush::String(c) << "'(" << c << ")!\n";
                         return false;
                     }
 
@@ -311,7 +316,7 @@ namespace mush
     template <BitmapFormat Fmt = RGBA>
     static mush::Font<Fmt, FREETYPE_FONT> load_freetype(const mush::String& file, uint32_t size)
     {
-        return mush::Font<Fmt, FREETYPE_FONT>(file, size, file_to_buffer(file), "1234567890AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'");
+        return mush::Font<Fmt, FREETYPE_FONT>(file, size, file_to_buffer(file), "1234567890AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'\\");
     }
     #endif
 }
