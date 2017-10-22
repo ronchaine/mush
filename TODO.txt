@@ -1,2 +1,0 @@
-Unit testing:
-    Make sure mush::string(ptr, len) returns a string with len
