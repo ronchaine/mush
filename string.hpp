@@ -103,6 +103,11 @@ namespace mush
         return 0;
     }
 
+    //! String class, almost a drop-in-replacement for std::string
+    /*!
+        mush::String is almost a drop-in-replacement for std::string, though it handles
+        its data internally as UTF32.
+    */
     class String
     {
         private:
@@ -160,15 +165,18 @@ namespace mush
                     data.push_back(utf32);
                 }
             }
-            String(const unsigned char* in)
+            String(const unsigned char* in, size_t length = ~0)
             {
                 char32_t utf32;
-                uint8_t len;
+                uint8_t len, tlen = 0;
                 while(*in != 0x00)
                 {
                     len = read_utf32(utf32, (const char*)in);
                     if (len == 0) break;
                     in += len;
+                    tlen += len;
+                    if (tlen > length)
+                        break;
                     data.push_back(utf32);
                 }
             }
