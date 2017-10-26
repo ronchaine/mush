@@ -5,7 +5,7 @@
 #include <deque>
 #include <algorithm>
 
-#include "shapes.hpp"
+#include "geometry.hpp"
 
 namespace mush
 {
