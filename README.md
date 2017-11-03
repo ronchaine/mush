@@ -1,6 +1,12 @@
 # mush
 Public mirror for Multiple Useful Small Headers.
 
+## Usage
+Get core.hpp and any headers you would like.  Headers not in extra are allowed
+to depend only on standard headers and core.hpp.  #include stuff you want and
+you are good to go.  Headers in extra are allowed to depend on whatever, so
+check out the header file's documentation to figure it out.
+
 ## Requirements
 Requires compiler that handles both C++ concepts TS and C++17, currently, that
 means g++ 7.0 or newer.
