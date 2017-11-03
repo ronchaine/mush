@@ -28,11 +28,14 @@ namespace mush
         using value_type = T;
         
         T width, height, depth;
-        
+
+        Size3D() = default;
         constexpr Size3D(T w, T h, T d) : width(w), height(h), depth(d) {}
         constexpr Size3D(std::tuple<T,T,T> in) : width(std::get<0>(in)),
                                                  height(std::get<1>(in)),
                                                  depth(std::get<2>(in)) {}
+
+        constexpr T total() const { return width * height * depth; }
 
         operator std::tuple<T,T,T>() const { return std::tuple(width,height,depth); }
     };
@@ -48,6 +51,7 @@ namespace mush
 
         T width, height;
 
+        Size2D() = default;
         constexpr Size2D(T w, T h) : width(w), height(h) {}
         constexpr Size2D(std::tuple<T,T> in) : width(std::get<0>(in)), height(std::get<1>(in)) {}
         
