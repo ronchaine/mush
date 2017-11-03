@@ -10,7 +10,13 @@ import sys
 import fileinput
 import hashlib
 
-ignore_files = ["ansi.hpp", "detail", "flat_hash.hpp", "image.hpp", "ringbuffer.hpp", "zip.hpp"]
+ignore_files = ["ansi.hpp",
+                "detail/image_prototypes.hpp",
+                "detail/png.hpp",
+                "flat_hash.hpp",
+                "image.hpp",
+                "ringbuffer.hpp",
+                "zip.hpp"]
 
 def sha256_checksum(filename, block_size=65536):
     sha256 = hashlib.sha256()
