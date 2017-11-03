@@ -1,0 +1,95 @@
+#!/bin/env python3
+
+# CURRENT_VERSION dev
+# BUILD 1
+
+import argparse
+import tarfile
+import os
+import sys
+import fileinput
+import hashlib
+
+def sha256_checksum(filename, block_size=65536):
+    sha256 = hashlib.sha256()
+    with open(filename, "rb") as f:
+        for block in iter(lambda: f.read(block_size), b''):
+            sha256.update(block)
+
+    return sha256.hexdigest()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("version", help="version number to use")
+parser.add_argument("--build-package", help="Target distribution/package type")
+parser.add_argument("--set-build-number", help="Manually set build number")
+args = parser.parse_args()
+
+additional_files = ["./README.md", "./LICENCE"]
+
+file_list_iterator = (os.path.join(root, f)
+        for root, _, files in os.walk(".")
+        for f in files)
+
+hpp_file_iter = (f for f in file_list_iterator if os.path.splitext(f)[1] == ".hpp")
+
+hpp_files = [f for f in hpp_file_iter if "package" not in f]
+file_list = hpp_files + additional_files
+
+current_version = "";
+build = 0;
+
+with fileinput.FileInput(files=[sys.argv[0]], inplace=True) as f:
+    for line in f:
+        if (line.startswith('#!')):
+            print(line, end='')
+        elif (line.startswith('#')):
+            if ("CURRENT_VERSION" in line):
+                current_version = line.split()[2]
+                print("# CURRENT_VERSION " + args.version)
+            elif ("BUILD" in line):
+                if current_version == args.version:
+                    build = int(line.split()[2])
+                if (args.set_build_number == None):
+                    print("# BUILD " + str(build + 1))
+                else:
+                    print("# BUILD " + args.set_build_number)
+            else:
+                print(line, end='')
+        else:
+            print(line, end='')
+
+dirname = "mush" + "-" + args.version + "-" + str(build)
+
+if not os.path.exists("package"):
+    os.makedirs("package")
+
+print ("Generating tar.gz package... ", end='')
+with tarfile.open("package/" + dirname + ".tar.gz", "w:gz") as tar:
+    for name in file_list:
+        tar.add(name, arcname=dirname + name[1:])
+print ("done")
+
+print ("Generating tar.bz2 package... ", end='')
+with tarfile.open("package/" + dirname + ".tar.bz2", "w:bz2") as tar:
+    for name in file_list:
+        tar.add(name, arcname=dirname + name[1:])
+print ("done")
+
+if args.build_package == "arch":
+    print("Building package for " + args.build_package);
+    with open("package/PKGBUILD", "w") as pkgbuild:
+        pkgbuild.write("pkgname='mush-headers'\n")
+        pkgbuild.write("pkgver=" + args.version + "\n")
+        pkgbuild.write("pkgrel=" + str(build) + "\n")
+        pkgbuild.write("pkgdesc='multiple useful small C++ headers'\n")
+        pkgbuild.write("arch=(any)\n")
+        pkgbuild.write("license=('ZLIB')\n")
+        pkgbuild.write("source=(\"" + dirname + ".tar.bz2\")\n")
+        pkgbuild.write("sha256sums=(\"" + sha256_checksum("package/" + dirname + ".tar.bz2") + "\")\n");
+        pkgbuild.write("package() {\n")
+        for name in hpp_files:
+            pkgbuild.write("  install -D -m644 " + dirname + name[1:] + " \"${pkgdir}/usr/include/mush/" + name[2:] + "\"\n")
+        pkgbuild.write("  install -D -m644 " + dirname + "/LICENCE \"${pkgdir}/usr/share/licenses/${pkgname}/LICENSE\"\n")
+        pkgbuild.write("}\n")
+print("All done")
+
