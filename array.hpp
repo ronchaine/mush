@@ -38,13 +38,9 @@ namespace mush
             constexpr auto operator[](size_type index)
             {
                 if constexpr (Depth == sizeof...(Dimensions))
-                {
-                    return cindex * ref.dims[Depth - 1] + index;
-                }
+                    return ref.element_container[cindex * ref.dims[Depth - 1] + index];
                 else
-                {
                     return array_access_proxy<Depth+1>(ref, index + (cindex * ref.dims[Depth-1]));
-                }
             }
         };
 
