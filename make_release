@@ -10,6 +10,8 @@ import sys
 import fileinput
 import hashlib
 
+ignore_files = ["ansi.hpp", "detail", "flat_hash.hpp", "image.hpp", "ringbuffer.hpp", "zip.hpp"]
+
 def sha256_checksum(filename, block_size=65536):
     sha256 = hashlib.sha256()
     with open(filename, "rb") as f:
@@ -33,6 +35,8 @@ file_list_iterator = (os.path.join(root, f)
 hpp_file_iter = (f for f in file_list_iterator if os.path.splitext(f)[1] == ".hpp")
 
 hpp_files = [f for f in hpp_file_iter if "package" not in f]
+hpp_files = [f for f in hpp_files if f[2:] not in (ignored for ignored in ignore_files)]
+
 file_list = hpp_files + additional_files
 
 current_version = "";
