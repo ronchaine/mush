@@ -1,9 +1,11 @@
-/** 
- * @file metastring.hpp
- * @brief Compile time string implementation
- * @author Jari Ronkainen
- * @version 1.0
- * @date 2017-08-22
+/*!
+ * \file metastring.hpp
+ * \brief Compile time string implementation
+ * \author Jari Ronkainen
+ * \version 1.0.1
+ *
+ * Depends on concepts.hpp
+ *
  */
 #ifndef MUSH_METASTRING_HEADER
 #define MUSH_METASTRING_HEADER
@@ -11,10 +13,10 @@
 #include <cstdint>
 #include <memory>
 
+#include "concepts.hpp"
+
 namespace mush
 {
-    namespace metastring_detail { template <typename T> concept bool IntegralType = std::is_integral<T>::value; }
-
     template <size_t... Indices> struct indices {};
 
     template <typename A, typename B> struct concatenate_indices;
@@ -54,7 +56,7 @@ namespace mush
     template <size_t A>
     struct make_indices_range<A, A> : indices<> {};
 
-    template <metastring_detail::IntegralType Num>
+    template <IntegralType Num>
     constexpr size_t get_num_size(Num n)
     {
         if (n == 0)
@@ -70,7 +72,7 @@ namespace mush
         return digits;
     }
 
-    template <metastring_detail::IntegralType Num>
+    template <IntegralType Num>
     constexpr char nthdigit(Num x, int n)
     {
         while(n--)
@@ -86,12 +88,12 @@ namespace mush
         constexpr static size_t size = sizeof...(Data);
     };
 
-    constexpr metastring_detail::IntegralType abs_val(metastring_detail::IntegralType x)
+    constexpr IntegralType abs_val(IntegralType x)
     {
         return x < 0 ? -x : x; 
     }
 
-    constexpr ssize_t digit_count(metastring_detail::IntegralType x)
+    constexpr ssize_t digit_count(IntegralType x)
     {
         return x < 0 ? 1 + digit_count(-x) : x < 10 ? 1 : 1 + digit_count(x/10);
     }

@@ -11,23 +11,10 @@
 #include <string>
 #include <cstring>
 
+#include "concepts.hpp"
+
 namespace mush
 {
-    template <typename T>
-    concept bool IntegerType = std::is_integral<T>::value 
-                            && !std::is_same<T,char32_t>::value
-                            && !std::is_same<T,char16_t>::value
-                            && !std::is_same<T,char>::value;
-    
-    template <typename T>
-    concept bool FloatingType = std::is_floating_point<T>::value;
-
-    template <typename T>
-    concept bool BackInsertable = requires(T a)
-    {
-        { a.push_back() }
-    };
-
     class String;
     inline bool match_char32(char32_t c, const String& chars);
 

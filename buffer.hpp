@@ -1,14 +1,15 @@
-/**
- * @file buffer.hpp
- * @brief Contains definitions and implementation for the Buffer class and associated functions
- * @author Jari Ronkainen
- * @version 1.1
- * @date 2017-08-22
+/*!
+ * \file buffer.hpp
+ * \brief Contains definitions and implementation for the Buffer class and associated functions
+ * \author Jari Ronkainen
+ * \version 1.1.1
  *
  * Buffer acts much like std::vector (actually using it as internal storage), but is intended
  * for holding raw data.  In addition to usual vector operations, it is possible to read and
  * write data into the buffer using additonal IO functions that automatically handle endian
  * conversions as well.
+ *
+ * Depends on concepts.hpp
  *
  * Buffer needs no #defines or any other magic, just include the header and it's ready to use.
  *
@@ -27,7 +28,8 @@
 #include <cstring>
 #include <fstream>
 
-//#include "common.hpp"
+#include "concepts.hpp"
+
 namespace mush
 {
     // We want to be able to swap endianness
@@ -64,8 +66,6 @@ namespace mush
 
         return true;
     }
-
-    template <typename T> concept bool PODType = std::is_pod<T>::value;
 
     #ifndef MUSH_INTERNAL_REMOVE_CR
     #define MUSH_INTERNAL_REMOVE_CR

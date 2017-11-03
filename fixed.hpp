@@ -1,9 +1,13 @@
-/** 
- * @file fixed.hpp
- * @brief Fixed point type
- * @author Jari Ronkainen
- * @version 1.0
- * @date 2017-08-22
+/*! 
+ * \file fixed.hpp
+ * \brief Fixed point type
+ * \author Jari Ronkainen
+ * \version 1.0.1
+ *
+ * Adds fixed point arithmetic type compatible with STL functions
+ *
+ * Depends on concepts.hpp
+ *
  */
 #ifndef MUSH_FIXED_POINT
 #define MUSH_FIXED_POINT
@@ -13,16 +17,11 @@
 
 #include <type_traits>
 
+#include "concepts.hpp"
+
 namespace mush
 {
-    template <typename T> concept bool ArithmeticType = std::is_arithmetic<T>::value;
-    template <typename T> concept bool IntegralType = std::is_integral<T>::value;
-    template <typename T> concept bool FloatingPointType = std::is_floating_point<T>::value;
-    template <typename T> concept bool SuitableBaseType = std::is_arithmetic<T>::value && (sizeof(T) >= 4);
-
-    /** 
-     * @brief Fixed point type
-     */
+    //! Fixed point type
     template <uint32_t Precision, SuitableBaseType Basetype = int32_t>
     class Fixed
     {
