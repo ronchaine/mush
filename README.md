@@ -7,7 +7,8 @@ means g++ 7.0 or newer.
 
 ## Licence
 Usually [zlib/libpng licence][zlib licence], see the individual files for details,
-the licencing information is at the end of the header file
+the licencing information is (usually, unless I forgot to add it) at the end of
+the header file.
 
 
 
