@@ -9,7 +9,7 @@
  * write data into the buffer using additonal IO functions that automatically handle endian
  * conversions as well.
  *
- * Depends on concepts.hpp
+ * Depends on core.hpp
  *
  * Buffer needs no #defines or any other magic, just include the header and it's ready to use.
  *
@@ -28,7 +28,7 @@
 #include <cstring>
 #include <fstream>
 
-#include "concepts.hpp"
+#include "core.hpp"
 
 namespace mush
 {
