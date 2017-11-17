@@ -4,7 +4,7 @@
  * \author Jari Ronkainen
  * \version 1.0.1
  *
- * Depends on concepts.hpp
+ * Depends on core.hpp
  *
  */
 #ifndef MUSH_METASTRING_HEADER
