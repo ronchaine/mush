@@ -82,7 +82,6 @@ namespace mush
         #ifdef MUSH_FREETYPE_FONTS
             static FT_Library library;
             static uint32_t l_count;
-            static FT_Face face;
         #endif
     };
 
@@ -99,6 +98,10 @@ namespace mush
             int32_t             line_spacing;
             int32_t             space_length;
             const uint32_t      pixel_size;
+        
+            #ifdef MUSH_FREETYPE_FONTS
+                 FT_Face        face;
+            #endif
 
             Font(const mush::String& in_prefix,
                  uint32_t in_size,
@@ -311,7 +314,7 @@ namespace mush
     #ifdef MUSH_FREETYPE_FONTS
     FT_Library Freetype_Basis::library;
     uint32_t Freetype_Basis::l_count;
-    FT_Face Freetype_Basis::face;
+    //FT_Face Freetype_Basis::face;
 
     template <BitmapFormat Fmt = RGBA>
     static mush::Font<Fmt, FREETYPE_FONT> load_freetype(const mush::String& file, uint32_t size)
