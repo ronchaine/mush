@@ -5,19 +5,7 @@
 #include <tuple>
 #include <iostream>
 
-namespace mush
-{
-    // I don't want this piece of code to depend on any header,
-    // so I just duplicate it.
-    #ifndef MUSH_DEPENDENT_FALSE
-    #define MUSH_DEPENDENT_FALSE
-    template<typename T> struct dependent_false
-    {
-        constexpr static bool value = false;
-        bool operator()() { return false; }
-    };
-    #endif
-}
+#include "core.hpp"
 
 namespace mush
 {
@@ -126,6 +114,8 @@ namespace mush
     //! two-dimensional rectangle
     struct Rectangle
     {
+        constexpr static uint32_t dimensions = 2;
+
         int32_t  x, y;
         uint32_t w, h;
 
@@ -158,9 +148,131 @@ namespace mush
             return out;
         }
     };
-    
-    // type traits
-    template <typename T> struct is_shape { static constexpr bool value = false; };
+
+    using Dimension_Type = uint32_t;
+
+    struct Vertex_Index_Triplet
+    {
+        uint32_t i0, i1, i2;
+
+        Vertex_Index_Triplet() = default;
+        Vertex_Index_Triplet(uint32_t v0, uint32_t v1, uint32_t v2) : i0(v0), i1(v1), i2(v2) {}
+    };
+
+    //! Shape base type
+    template <uint32_t Vertex_Count,
+              uint32_t Triangle_Count,
+              typename Vertex_Type>
+    struct Physical_Shape
+    {
+        constexpr static uint32_t vertex_count = Vertex_Count;
+        constexpr static uint32_t triangle_count = Triangle_Count;
+
+        std::array<Vertex_Type, Vertex_Count>                   vertices;
+        const std::array<Vertex_Index_Triplet, Triangle_Count>  triangles;
+    };
+
+    template <typename Vertex_Type>
+    struct Triangle : public Physical_Shape<3, 1, Vertex_Type>
+    {
+        Triangle()
+        {
+            *this.triangles[0] = {0, 1, 2};
+        }
+    };
+
+    template <typename Vertex_Type>
+    struct Quad : public Physical_Shape<4, 2, Vertex_Type>
+    {
+        constexpr static uint8_t TOP_LEFT      = 0;
+        constexpr static uint8_t TOP_RIGHT     = 1;
+        constexpr static uint8_t BOTTOM_LEFT   = 2;
+        constexpr static uint8_t BOTTOM_RIGHT  = 3;
+
+        Quad()
+        {
+            *this.triangles[0] = {TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT};
+            *this.triangles[1] = {BOTTOM_RIGHT, BOTTOM_LEFT, TOP_RIGHT};
+        }
+
+        Quad(Vertex_Type tl,
+             Vertex_Type tr,
+             Vertex_Type bl,
+             Vertex_Type br) : Quad()
+        {
+            *this.vertices[0] = tl;
+            *this.vertices[1] = tr;
+            *this.vertices[2] = bl;
+            *this.vertices[3] = br;
+        }
+    };
+
+    template <typename Vertex_Type>
+    struct Box : public Physical_Shape<8, 12, Vertex_Type>
+    {
+        constexpr static uint16_t FRONT_TOP_LEFT        = 0;
+        constexpr static uint16_t FRONT_TOP_RIGHT       = 1;
+        constexpr static uint16_t FRONT_BOTTOM_LEFT     = 2;
+        constexpr static uint16_t FRONT_BOTTOM_RIGHT    = 3;
+        constexpr static uint16_t BACK_TOP_LEFT         = 4;
+        constexpr static uint16_t BACK_TOP_RIGHT        = 5;
+        constexpr static uint16_t BACK_BOTTOM_LEFT      = 6;
+        constexpr static uint16_t BACK_BOTTOM_RIGHT     = 7;
+
+        bool axis_aligned = false;
+
+        constexpr Box()
+        {
+            // *this is required because we're inheriting from a template
+            // top face
+            *this.triangles[0] = {FRONT_TOP_LEFT, FRONT_TOP_RIGHT, BACK_TOP_LEFT};
+            *this.triangles[1] = {BACK_TOP_LEFT, FRONT_TOP_RIGHT, BACK_TOP_RIGHT};
+            // front face
+            *this.triangles[2] = {FRONT_BOTTOM_LEFT, FRONT_TOP_RIGHT, FRONT_TOP_LEFT};
+            *this.triangles[3] = {FRONT_BOTTOM_LEFT, FRONT_BOTTOM_RIGHT, FRONT_TOP_RIGHT};
+            // left face
+            *this.triangles[4] = {BACK_BOTTOM_LEFT, FRONT_TOP_LEFT, BACK_TOP_LEFT};
+            *this.triangles[5] = {BACK_BOTTOM_LEFT, FRONT_BOTTOM_LEFT, FRONT_TOP_LEFT};
+            // bottom face
+            *this.triangles[6] = {FRONT_BOTTOM_RIGHT, FRONT_BOTTOM_LEFT, BACK_BOTTOM_LEFT};
+            *this.triangles[7] = {FRONT_BOTTOM_RIGHT, BACK_BOTTOM_LEFT, BACK_BOTTOM_RIGHT};
+            // back face
+            *this.triangles[8] = {BACK_TOP_LEFT, BACK_TOP_RIGHT, BACK_BOTTOM_RIGHT};
+            *this.triangles[9] = {BACK_TOP_LEFT, BACK_BOTTOM_LEFT, BACK_BOTTOM_RIGHT};
+            // right face
+            *this.triangles[10] = {BACK_BOTTOM_RIGHT, BACK_TOP_RIGHT, FRONT_TOP_RIGHT};
+            *this.triangles[11] = {BACK_BOTTOM_RIGHT, FRONT_TOP_RIGHT, FRONT_BOTTOM_RIGHT};
+        }
+
+        constexpr Box(Vertex_Type ftl,
+            Vertex_Type ftr,
+            Vertex_Type fbl,
+            Vertex_Type fbr,
+            Vertex_Type btl,
+            Vertex_Type btr,
+            Vertex_Type bbl,
+            Vertex_Type bbr) : Box()
+        {
+            *this.vertices[FRONT_TOP_LEFT]      = ftl;
+            *this.vertices[FRONT_TOP_RIGHT]     = ftr;
+            *this.vertices[FRONT_BOTTOM_LEFT]   = fbl;
+            *this.vertices[FRONT_BOTTOM_RIGHT]  = fbr;
+            *this.vertices[BACK_TOP_LEFT]       = btl;
+            *this.vertices[BACK_TOP_RIGHT]      = btr;
+            *this.vertices[BACK_BOTTOM_LEFT]    = bbl;
+            *this.vertices[BACK_BOTTOM_RIGHT]   = bbr;
+        }
+
+        constexpr Box(Vertex_Type first_corner, Vertex_Type second_corner)
+        {
+            *this.vertices[FRONT_TOP_LEFT] = first_corner;
+            *this.vertices[BACK_BOTTOM_RIGHT] = second_corner;
+        }
+    };
+
+    // type traits, for starters, anything descended from Physical_Shape is a shape
+    template <typename T> struct is_shape
+    { static constexpr bool value = std::is_base_of_v<Physical_Shape, T>; };
 
     // point is kinda shape
     template <typename T> struct is_shape<Point<T>> { static constexpr bool value = true; };
