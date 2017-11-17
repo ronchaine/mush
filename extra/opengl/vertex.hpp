@@ -6,6 +6,7 @@
 #include <ostream>
 
 #include "../../buffer.hpp"
+#include "../../geometry.hpp"
 
 namespace mush
 {
@@ -178,6 +179,23 @@ namespace mush::extra::opengl
                           const vertex_type& v3)
             {
                 add_vertices(v0, v1, v3, v1, v2, v3);
+            }
+
+            void add_triangle(const vertex_type& v0,
+                              const vertex_type& v1,
+                              const vertex_type& v2)
+            {
+                add_vertices(v0, v1, v2);
+            }
+
+            void add_geometry(mush::Shape shape)
+            {
+                for (size_t i = 0; i < shape.triangle_count; ++i)
+                {
+                    add_triangle( (const vertex_type&)shape.vertices[shape.triangles[i].i0],
+                                  (const vertex_type&)shape.vertices[shape.triangles[i].i1],
+                                  (const vertex_type&)shape.vertices[shape.triangles[i].i2]);
+                }
             }
     };
 }

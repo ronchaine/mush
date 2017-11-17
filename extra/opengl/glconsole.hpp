@@ -292,6 +292,11 @@ namespace mush::extra::opengl::console
                 colour              = 0xffffffff;
             }
 
+            void set_spritesheet(SpriteSheet<4>& sheet)
+            {
+                spritesheet = &sheet;
+            }
+
             template <BitmapFormat Format, FontType FT>
             void set_font(Font<Format, FT>& usefont)
             {
