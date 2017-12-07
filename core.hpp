@@ -14,6 +14,16 @@
 
 namespace mush
 {
+    using ColourFormat = uint32_t;
+
+    constexpr ColourFormat RGBA             = 0x00;
+    constexpr ColourFormat BGRA             = 0xa0;
+    constexpr ColourFormat XYZ              = 0xa1;
+    constexpr ColourFormat HSV              = 0xa2;
+    constexpr ColourFormat ALPHA            = 0x01;
+    constexpr ColourFormat PALETTE_ALPHA    = 0x02;
+    constexpr ColourFormat UNKNOWN          = 0xfe;
+
     template <typename T> concept bool PODType = std::is_pod<T>::value;
     
     template <typename T> concept bool ArithmeticType = std::is_arithmetic<T>::value;
@@ -41,7 +51,7 @@ namespace mush
     template<typename T> struct dependent_false
     {
         constexpr static bool value = false;
-        bool operator()() { return false; }
+        constexpr bool operator()() { return false; }
     };
     #endif
 
