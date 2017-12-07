@@ -6,22 +6,13 @@
 
 namespace mush
 {
-    template <typename T>
-    concept bool SuitableError = requires(T a)
-    {
-        {
-           // a.msg()
-            true
-        }
-    };
-    
     struct Basic_Error
     {
     };
 
     // Result for non-void non-reference type
-    template <typename ValueType, SuitableError ErrorType, bool IsReference>
-    class Basic_Result
+    template <typename ValueType, typename ErrorType, bool IsReference>
+    class [[deprecated("monadic_error.hpp provides better alternative")]] Basic_Result
     {
         private:
             ValueType value;
@@ -84,7 +75,7 @@ namespace mush
     };
     
     // Result for reference type
-    template <typename ValueType, SuitableError ErrorType>
+    template <typename ValueType, typename ErrorType>
     class Basic_Result<ValueType, ErrorType, true>
     {
         private:
@@ -126,7 +117,7 @@ namespace mush
     };
 
     // Result for void type
-    template <SuitableError ErrorType>
+    template <typename ErrorType>
     class Basic_Result<void, ErrorType, false>
     {
         private:
@@ -153,7 +144,7 @@ namespace mush
             }
     };
 
-    template <typename ValueType, SuitableError ErrorType, bool IsReference>
+    template <typename ValueType, typename ErrorType, bool IsReference>
     Basic_Result<ValueType, ErrorType, IsReference> make_result(bool)
     {
     }
