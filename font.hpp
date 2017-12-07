@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include "core.hpp"
 #include "string.hpp"
 #include "buffer.hpp"
 
@@ -53,12 +54,6 @@ namespace mush
     constexpr FontType FREETYPE_FONT    = 0x01;
     constexpr FontType BITMAP_FONT      = 0x02;
 
-    using BitmapFormat = uint32_t;
-
-    constexpr BitmapFormat RGBA             = 0x00;
-    constexpr BitmapFormat ALPHA            = 0x01;
-    constexpr BitmapFormat PALETTE_ALPHA    = 0x02;
-
     struct GlyphMetrics
     {
         int32_t left;
@@ -74,7 +69,7 @@ namespace mush
     {
         GlyphMetrics    metrics;
         Buffer          bitmap;
-        BitmapFormat    format;
+        ColourFormat    format;
     };
 
     struct Freetype_Basis
@@ -85,7 +80,7 @@ namespace mush
         #endif
     };
 
-    template <BitmapFormat Format, FontType T>
+    template <ColourFormat Format, FontType T>
     class Font : Freetype_Basis
     {
         protected:
@@ -316,7 +311,7 @@ namespace mush
     uint32_t Freetype_Basis::l_count;
     //FT_Face Freetype_Basis::face;
 
-    template <BitmapFormat Fmt = RGBA>
+    template <ColourFormat Fmt = RGBA>
     static mush::Font<Fmt, FREETYPE_FONT> load_freetype(const mush::String& file, uint32_t size)
     {
         return mush::Font<Fmt, FREETYPE_FONT>(file, size, file_to_buffer(file), "1234567890AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'\\");
