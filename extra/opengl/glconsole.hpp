@@ -226,7 +226,7 @@ namespace mush::extra::opengl::console
 
             struct {
                 void*           ptr;
-                BitmapFormat    fmt;
+                ColourFormat    fmt;
                 FontType        type;
             } font;
 
@@ -297,7 +297,7 @@ namespace mush::extra::opengl::console
                 spritesheet = &sheet;
             }
 
-            template <BitmapFormat Format, FontType FT>
+            template <ColourFormat Format, FontType FT>
             void set_font(Font<Format, FT>& usefont)
             {
                 font.ptr  = &usefont;
