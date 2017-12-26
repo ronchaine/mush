@@ -7,6 +7,8 @@
 
 namespace mush
 {
+    struct Result_OK {};
+
     template <typename FlagType>
     struct Result_Flags
     {
@@ -76,15 +78,15 @@ namespace mush
         }
         ~Result_Storage() { clean(); }
     };
-    
+
     template <typename ErrorType, typename FlagType, bool ValueIsRef>
     struct Result_Storage<void, ErrorType, FlagType, ValueIsRef>
     {
         ErrorType error;
         Result_Flags<FlagType> flags;
 
-        constexpr Result_Storage() {}
-        constexpr Result_Storage(ErrorType error) : error(std::move(error)), flags(this->CLEAR_FLAGS) {}
+        constexpr Result_Storage(bool good = false) : flags(good) {}
+        constexpr Result_Storage(ErrorType error) : error(std::move(error)), flags() {}
         
         void clean()
         {
@@ -104,6 +106,10 @@ namespace mush
         public:
             constexpr Basic_Result() {}
             
+            template <typename V = ValueType,
+                      typename std::enable_if_t<std::is_void<V>::value, int> = 0>
+            constexpr Basic_Result(Result_OK) : stored(true) {}
+
             template <typename V = ValueType,
                       typename std::enable_if_t<!std::is_same<V,ErrorType>::value, int> = 0,
                       typename std::enable_if_t<!std::is_void<V>::value, int> = 0>
@@ -146,6 +152,16 @@ namespace mush
             {
                 if (*this) return unwrap();             
                 return std::forward<ValueType>(handler(stored.error));
+            }
+            
+            // Stuff to get to the actual result value
+            template <typename V = ValueType, typename E = ErrorType,
+                      typename std::enable_if_t<std::is_void<V>::value, int> = 0,
+                      typename std::enable_if_t<!std::is_void<E>::value, int> = 0>
+            void catch_error(std::function<void(ErrorType&)> handler)
+            {
+                if (*this) return;
+                return handler(stored.error);
             }
 
             template <typename V = ValueType,
