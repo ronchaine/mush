@@ -109,6 +109,8 @@ namespace mush
             typedef char32_t*       pointer;
             typedef const char32_t* const_pointer;
             typedef size_t          size_type;
+            
+            constexpr static size_type npos = ~0;
 
             // Constructors
             String() = default;
@@ -206,11 +208,29 @@ namespace mush
             std::vector<char32_t>::iterator end() { return data.end(); }
             std::vector<char32_t>::const_iterator end() const { return data.end(); }
 
+            std::vector<char32_t>::reverse_iterator rbegin() { return data.rbegin(); }
+            std::vector<char32_t>::const_reverse_iterator rbegin() const { return data.rbegin(); }
+            std::vector<char32_t>::reverse_iterator rend() { return data.rend(); }
+            std::vector<char32_t>::const_reverse_iterator rend() const { return data.rend(); }
+
             char32_t& operator[](const int index) { return *(data.begin() + index); }
             const char32_t operator[](const int index) const { return *(data.begin() + index); }
 
             size_t length() const { return data.size(); }
             size_t size() const { return data.size(); }
+
+            /*
+            TODO: Implement this
+            size_t utf8_length() const
+            {
+                size_t len;
+                for (value_type c : *this)
+                {
+                }
+
+                return len;
+            }
+            */
 
             const char32_t* ptr() const { return &data[0]; }
 
@@ -410,7 +430,7 @@ namespace mush
             /*!
                 Searches the string for a sequence specified by the argument seq
             */
-            bool contains(const String& seq) const
+            bool contains(const String& seq, size_type* pos = nullptr) const
             {
                 if (this->length() < seq.length())
                     return false;
@@ -420,10 +440,45 @@ namespace mush
                 for (size_t i = 0; i < lastpos; ++i)
                 {
                     if (substr(i, seq.size()) == seq)
+                    {
+                        if (pos != nullptr)
+                            *pos = i + seq.size();
                         return true;
+                    }
                 }
 
                 return false;
+            }
+           
+            size_type find_last_of(const String& seq) const
+            {
+                for (size_t i = size()-1; i != npos; --i)
+                {
+                    if (match_char32((*this)[i], seq))
+                        return i; 
+                }
+                return npos;
+            }
+
+            //! Remove trailing characters
+            String rstrip(const String& seq = " \t")
+            {
+                size_t pos;
+                if ((pos = find_last_of(seq)) == npos)
+                    return *this;
+
+                return substr(0, pos);
+            }
+
+            //! Get substring after a sequence
+            String after(const String& seq) const
+            {
+                size_t pos = 0;
+
+                if (contains(seq, &pos))
+                    return substr(pos, size());
+
+                return "";
             }
 
             friend inline std::ostream& operator<<(std::ostream& out, const mush::String& str)
@@ -494,9 +549,70 @@ namespace mush
 
         return false;
     }
+
+    inline char* c_string(const String& s, char* out)
+    {
+        if (out == nullptr)
+            return nullptr;
+
+        size_t pos = 0; char32_t cp;
+        for (size_t i = 0; i < s.length(); i++)
+        {
+            cp = s[i];
+
+            if (cp < 0x80)
+            {
+                *(out + pos) = static_cast<char>(s[i]);
+                pos++;
+                continue;
+            } else if (cp < 0x800) {
+                *(out + pos) = static_cast<char>((s[i] >> 6)    | 0xc0); pos++;
+                *(out + pos) = static_cast<char>((s[i] & 0x3f)  | 0x80); pos++;
+                continue;
+            } else if (cp < 0x10000)
+            {
+                *(out + pos) = static_cast<char>((s[i] >> 12)           | 0xe0); pos++;
+                *(out + pos) = static_cast<char>(((s[i] >> 6) & 0x3f)   | 0x80); pos++;
+                *(out + pos) = static_cast<char>((s[i] & 0x3f)          | 0x80); pos++;
+            } else
+            {
+                *(out + pos) = static_cast<char>((s[i] >> 18)           | 0xe0); pos++;
+                *(out + pos) = static_cast<char>(((s[i] >> 12) & 0x3f)  | 0x80); pos++;
+                *(out + pos) = static_cast<char>(((s[i] >> 6) & 0x3f)   | 0x80); pos++;
+                *(out + pos) = static_cast<char>((s[i] & 0x3f)          | 0x80); pos++;
+            }
+        }
+
+        return out;
+    }
+
+    /*
+    template <typename CharT = char32_t>
+    class String_View
+    {
+        private:
+            CharT*              pdata;
+            size_t              ssize;
+
+        public:
+            typedef CharT       value_type;
+
+            String_View() : pdata(nullptr), ssize(0) {}
+            String_View(const String_View&) = default;
+
+            String_View& operator=(const String_View&) = default;
+
+            template <typename CT>
+            String_View(const String_View<CT>& str) : pdata(str.data(), ssize(str.size())) {}
+    };
     
+    template <typename CharT = char32_t>
+    using string_view = String_View<CharT>;
+    */
+
     #ifndef DISABLE_LEGACY
     using string = String;
+
     #endif
 }
 
