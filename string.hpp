@@ -8,8 +8,8 @@
 #include <vector>
 #include <cstdio>
 #include <cstdint>
-#include <string>
 #include <cstring>
+#include <string>
 
 #include "core.hpp"
 
@@ -99,6 +99,7 @@ namespace mush
     {
         private:
             std::vector<char32_t> data;
+
         public:
             constexpr static char   END_OF_FILE[] = "<MUSH_EOF>";
 
@@ -388,6 +389,21 @@ namespace mush
                     rval.data.push_back(data[it]);
                 }
                 return rval;
+            }
+
+            //! Does a string start with a sequence
+            /*!
+                Checks if the string starts with a sequence specified by the argument seq
+            */
+            bool starts_with(const String& seq) const
+            {
+                if (this->length() < seq.length())
+                    return false;
+
+                if (memcmp(this->ptr(), seq.ptr(), seq.length() * sizeof(value_type)) != 0)
+                    return false;
+
+                return true;
             }
 
             //! Does a string contain a sequence
