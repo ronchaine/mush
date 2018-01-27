@@ -46,6 +46,21 @@ namespace mush
         { a.push_back() }
     };
 
+    template <typename T>
+    struct wrap_reverse
+    {
+        T& iterable;
+    };
+
+    template <typename T>
+    auto begin (wrap_reverse<T> w) { return std::rbegin(w.iterable); }
+    
+    template <typename T>
+    auto end (wrap_reverse<T> w) { return std::rend(w.iterable); }
+
+    template <typename T>
+    wrap_reverse<T> reverse_adapter (T&& iterable) { return {iterable}; }
+
     #ifndef MUSH_DEPENDENT_FALSE
     #define MUSH_DEPENDENT_FALSE
     template<typename T> struct dependent_false
