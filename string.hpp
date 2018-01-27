@@ -583,6 +583,8 @@ namespace mush
             }
         }
 
+        *(out + pos) = '\0';
+
         return out;
     }
 
