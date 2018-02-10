@@ -6,8 +6,10 @@
 
 namespace mush
 {
+    struct Reque_Base {};
+
     template <typename T, typename A = std::allocator<T>>
-    class Reque
+    class Reque : public Reque_Base
     {
         private:
             std::deque<T>           storage;
@@ -120,9 +122,22 @@ namespace mush
                 unused.insert(index);
             }
 
-            T& operator[](const size_t idx)
+            const T& operator[](const size_t idx) const
             {
                 return storage[idx];
+            }
+
+            int32_t get_unused_index()
+            {
+                if (unused.size() != 0)
+                {
+                    int32_t value = *unused.begin();
+                    unused.erase(unused.begin());
+                    return value;
+                }
+
+                storage.resize(storage.size() + 1);
+                return storage.size() - 1;
             }
     };
 }
