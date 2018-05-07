@@ -247,6 +247,20 @@ namespace mush
                 else return rval;
             }
     };
+   
+    // Provide very simple default error
+    struct Error
+    {
+        const std::string   message;
+        Error() : message("") {}
+        Error(const char* e) : message(e) {}
+
+        const char* msg() { return message.c_str(); }
+    };
+
+    template <typename ValueType, bool IsReference = std::is_reference<ValueType>::value>
+    using Result = mush::Basic_Result<ValueType, Error, uint8_t, IsReference>;
+    using Flags = uint16_t;    
 }
 /*
     Discarded snippets
