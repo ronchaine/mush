@@ -127,6 +127,7 @@ namespace mush
                 return storage[idx];
             }
 
+            // get unused index and set it used
             int32_t get_unused_index()
             {
                 if (unused.size() != 0)
