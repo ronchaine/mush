@@ -173,7 +173,7 @@ namespace mush
 
             //! Construct from STL string
             /*!
-                Creates wcl string instance from data provided in std::string.
+                Creates mush string instance from data provided in std::string.
                 It is presumed that the std::string data is encoded in UTF-8 or
                 ASCII format.
             */
