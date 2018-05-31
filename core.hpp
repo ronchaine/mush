@@ -24,6 +24,7 @@ namespace mush
     constexpr ColourFormat PALETTE_ALPHA    = 0x02;
     constexpr ColourFormat UNKNOWN          = 0xfe;
 
+    #ifndef NO_CONCEPTS
     template <typename T> concept bool PODType = std::is_pod<T>::value;
     
     template <typename T> concept bool ArithmeticType = std::is_arithmetic<T>::value;
@@ -45,6 +46,7 @@ namespace mush
     {
         { a.push_back() }
     };
+    #endif
 
     template <typename T>
     struct wrap_reverse
