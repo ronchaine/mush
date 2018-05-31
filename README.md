@@ -8,11 +8,11 @@ stuff you want and you are good to go.  Headers in extra are allowed to depend o
 whatever, so check out the header file's documentation to figure it out.
 
 ## Requirements
-Requires compiler that handles both C++ concepts TS and C++17, currently, that
-means g++ 7.0 or newer.
+For everything to work, requires compiler that handles both C++ concepts TS and
+C++17, currently, that means g++ 7.0 or newer.  For almost everything to work,
+you're good with a compiler that can do C++17 and pass -DNO_CONCEPTS.
 
 ## ToDo before calling 1.0 done
-* Move all defined concepts to a single hpp file
 * Document all files, generate doxygen use guide
 * Remove "WIP" files from release
 * More testing
