@@ -2,20 +2,16 @@
  * \file buffer.hpp
  * \brief Contains definitions and implementation for the Buffer class and associated functions
  * \author Jari Ronkainen
- * \version 1.1.1
+ * \version 1.2.0-beta1
  *
  * Buffer acts much like std::vector (actually using it as internal storage), but is intended
  * for holding raw data.  In addition to usual vector operations, it is possible to read and
  * write data into the buffer using additonal IO functions that automatically handle endian
  * conversions as well.
  *
- * Depends on core.hpp
- *
  * Buffer needs no #defines or any other magic, just include the header and it's ready to use.
  *
  */
-
-#include <iostream>
 
 #ifndef MUSH_BUFFER
 #define MUSH_BUFFER
@@ -28,13 +24,63 @@
 #include <cstring>
 #include <fstream>
 
-#include "core.hpp"
-
 namespace mush
-{
+{ 
+    constexpr static size_t MUSH_DEFAULT_LOC = ~0;
+
+    /** 
+     * @brief Class for holding raw data
+     */
+    class Buffer : public std::vector<uint8_t>
+    {
+        public:
+            bool            can_read(size_t bytes) const noexcept;
+            size_t          pos() const noexcept;
+            const uint8_t*  getptr() const noexcept;
+
+            size_t          hash() const noexcept;
+
+            void            seek(size_t target) const noexcept;
+            void            replace(size_t loc, size_t len, const Buffer& src) noexcept; 
+
+            Buffer          copy_until(const uint8_t delim) const noexcept;
+            Buffer          copy_bytes(size_t len) const;
+
+            template <typename T>
+            void from_stl_type(T&& data);
+
+            template <typename T>
+            T read_strval() const;
+
+            template <typename T>
+            T read(size_t where = MUSH_DEFAULT_LOC, bool big_endian_mode = false) const noexcept;
+            
+            template <typename T>
+            T read_le(size_t where = MUSH_DEFAULT_LOC) const noexcept;
+            
+            template <typename T>
+            void write(T&& data, bool big_endian_mode = false) noexcept;
+            
+            template <typename T>
+            void write_le(T&& data) noexcept;
+
+            template <typename... T>
+            void write_bytes(T... bytes) noexcept;
+
+        private:
+            mutable size_t read_ptr = 0;
+            
+            template <typename... T>
+            void write_bytes_impl(uint8_t b, T... bytes) noexcept;
+    };
+
+    inline Buffer file_to_buffer(const char* filename);
+
+    // IMPLEMENTATIONS
+
     // We want to be able to swap endianness
     template <typename T>
-    T endian_swap(T value)
+    T endian_swap(T&& value) noexcept
     {
         union
         {
@@ -42,7 +88,7 @@ namespace mush
             uint8_t value_u8[sizeof(T)];
         } src, dst;
 
-        src.value = value;
+        src.value = std::forward<T>(value);
 
         for (size_t i = 0; i < sizeof(T); ++i)
             dst.value_u8[i] = src.value_u8[sizeof(T)-1-i];
@@ -51,14 +97,14 @@ namespace mush
     }
 
     // Required for hash functions
-    constexpr bool size_t_x64()
+    constexpr bool size_t_x64() noexcept
     { return sizeof(size_t) == 8 ? true : false; }
 
     //! Checks if the system is big-endian
     /*!
         Performs fast check if the system is big-endian
     */
-    inline constexpr bool big_endian()
+    inline constexpr bool big_endian() noexcept
     {
         uint16_t t = 0xbe1e;
         if ((uint8_t) *(&t) == 0x1e)
@@ -67,320 +113,254 @@ namespace mush
         return true;
     }
 
-    #ifndef MUSH_INTERNAL_REMOVE_CR
-    #define MUSH_INTERNAL_REMOVE_CR
-    template <typename T> struct remove_cr              { typedef T type; };
-    template <typename T> struct remove_cr<T&>          { typedef T type; };
-    template <typename T> struct remove_cr<T&&>         { typedef T type; };
-    template <typename T> struct remove_cr<const T>     { typedef T type; };
-    template <typename T> struct remove_cr<const T&>    { typedef T type; };
-    template <typename T> struct remove_cr<const T&&>   { typedef T type; };
-    #endif
+    // Buffer class implementations
+
+    //! get data pointer for the buffer
+    inline const uint8_t* Buffer::getptr() const noexcept { return &this->at(0); }
+
+    //! return the position of read_ptr
+    inline size_t Buffer::pos() const noexcept
+    {
+        return read_ptr;
+    }
+
+    //! move the read_ptr
+    inline void Buffer::seek(size_t target) const noexcept
+    {
+        if (target < size()) read_ptr = target;
+    }
 
     /** 
-     * @brief Class for holding raw data
+     * @brief Read data until a byte is met
+     * 
+     * @param delim byte ending the search
+     * 
+     * @return A new buffer holding all the values up to and including the delim byte.
      */
-    class Buffer : public std::vector<uint8_t>
+    inline Buffer Buffer::copy_until(const uint8_t delim) const noexcept
     {
-        public:
-            /** 
-             * @brief Default constructor
-             *
-             * The default (and only9 constructor for Buffer class,
-             * sets read_ptr to begining of the Buffer and returns
-             */
-            Buffer() : read_ptr(0) {}
-
-            // allow reading point to change even if the buffer is const
-            //! read_ptr is the position in the Buffer where reads will take place,
-            //! expressed in bytes from the start, where 0 is the start of the buffer
-            mutable size_t read_ptr;
-
-            //! get data pointer for the buffer
-            inline const uint8_t* getptr() const { return &this->at(0); }
-
-            //! get buffer FNV-1a hash
-            inline size_t hash() const noexcept;
-
-            //! convert the buffer to a std::string, sometimes useful for textual data
-            inline std::string to_string() const
-            {
-                return std::string(this->begin(), this->end());
-            }
-
-            /** 
-             * @brief Read data until a byte is met
-             * 
-             * @param delim byte ending the search
-             * 
-             * @return A new buffer holding all the values up to and including the delim byte.
-             */
-            Buffer read_until(const uint8_t delim) const
-            {
-                Buffer rval;
-                uint8_t v;
-                while(read_ptr < size())
-                {
-                    v = this->at(read_ptr);
-                    rval.emplace_back(v);
-                    read_ptr++;
-                    if (delim == v)
-                        break;
-                }
-                return rval;
-            };
-
-            /** 
-             * @brief Convert from std::string to a buffer
-             *
-             * Takes a string and replaces contents of the buffer with the
-             * contents of the string
-             * 
-             * @param s  input string.
-             *
-             */
-            inline void from_stl_string(const std::string& s)
-            {
-                this->clear();
-                std::copy(s.begin(), s.end(), back_inserter(*this));
-            }
-
-            /** 
-             * @brief Checks if there are still enough data remaining that can be read
-             * 
-             * @param s  How many bytes need still to be read
-             * 
-             * @return true if size of the buffer is large enough for s bytes of data to be read, otherwise false
-             */
-            inline bool can_read(size_t s) const
-            {
-                if (size() < pos() + s)
-                    return false;
-
-                return true;
-            };
-
-            /** 
-             * @brief Read a string that represents an integer
-             * 
-             * @return Integer of requested type represented by the text data read
-             */
-            template <typename T>
-            inline T read_strval() const
-            {
-                Buffer val;
-                uint8_t v;
-                while (read_ptr < size())
-                {
-                    v = this->at(read_ptr);
-                    val.emplace_back(v);
-                    if ((v >= '0') && (v <= '9'))
-                    {
-                        read_ptr++;
-                        continue;
-                    }
-                    break;
-                }
-                return atoi(val.to_string().c_str());
-            }
-
-            /** 
-             * @brief Read data from a buffer into a new buffer
-             * 
-             * @param len Number of bytes to be read
-             * 
-             * @return A new buffer containing len bytes of data.
-             */
-            inline Buffer read_bytes(size_t len) const
-            {
-                Buffer rval;
-                if (size() - read_ptr < len)
-                    return rval;
-
-                std::copy(data(), data() + len, back_inserter(rval));
-                read_ptr += len;
-
-                return rval;
-            }
-
-            /** 
-             * @brief Replace data in a buffer
-             * 
-             * @param loc   where in buffer the replaced data starts
-             * @param len   how many bytes of the data will be replaced
-             * @param src   source data buffer
-             */
-            inline void replace(size_t loc, size_t len, const Buffer& src)
-            {
-                // make sure the buffer is large enough
-                if (size() - loc < len)
-                    resize(loc + len);
-
-                // do not read more than we can
-                if (src.size() > len)
-                    len = src.size();
-
-                memcpy(data() + loc, src.data(), len);
-            }
-
-            /** 
-             * @brief Read data of type T from the buffer
-             * 
-             * @param where the position where to read, if omitted, read_ptr is used as the position
-             * 
-             * @return Data read as type T.
-             */
-            template <typename T>
-            inline T read(size_t where) const
-            {
-                T rval = *(T*)&(this->at(where));
-
-                if (big_endian())
-                rval = endian_swap(rval);
-
-                return rval;
-            }
-
-            template <typename T>
-            inline T read() const
-            {
-                T rval = *(T*)&(this->at(read_ptr));
-
-                if constexpr (std::is_pod<T>::value)
-                {
-                    if (big_endian())
-                    rval = endian_swap(rval);
-                }
-
-                read_ptr += sizeof(T);
-
-                return rval;
-            }
-            
-            /** 
-             * @brief Read little-endian data of type T from the buffer
-             * 
-             * @param where the position where to read, if omitted, read_ptr is used as the position
-             * 
-             * @return Data read as type T.
-             */
-            template <typename T>
-            inline T read_le(size_t where) const
-            {
-                T rval = *(T*)&(this->at(where));
-
-                if (!big_endian())
-                rval = endian_swap(rval);
-
-                return rval;
-            }
-
-            template <typename T>
-            inline T read_le() const
-            {
-                T rval = *(T*)&(this->at(read_ptr));
-
-                if (!big_endian())
-                rval = endian_swap(rval);
-
-                read_ptr += sizeof(T);
-
-                return rval;
-            }
-
-            /** 
-             * @brief Write data of type T to the end of the buffer
-             * 
-             * @param data  data to be written into the buffer
-             */
-            template <typename T>
-            inline void write(const T& data)
-            {
-                size_t start = size();
-                this->resize(size() + sizeof(T));
-                memcpy(this->data() + start, &data, sizeof(T)); 
-            }
-
-            #ifndef NO_CONCEPTS
-            inline void write(const PODType& data)
-            {
-                this->reserve(this->size() + sizeof(data));
-
-                uint8_t* dataptr = nullptr;
-                typename remove_cr<decltype(data)>::type t_val;
-
-                if (big_endian())
-                {
-                    t_val = endian_swap(data);
-                    dataptr = (uint8_t*)&t_val;
-                } else {
-                    dataptr = (uint8_t*)&data;
-                }
-
-                for (size_t it = 0; it < sizeof(data); ++it)
-                    this->push_back(*(dataptr+it));
-            }
-
-            inline void write_le(const PODType& data)
-            {
-                this->reserve(this->size() + sizeof(data));
-
-                uint8_t* dataptr = nullptr;
-                typename remove_cr<decltype(data)>::type t_val;
-
-                if (!big_endian())
-                {
-                    t_val = endian_swap(data);
-                    dataptr = (uint8_t*)&t_val;
-                } else {
-                    dataptr = (uint8_t*)&data;
-                }
-
-                for (size_t it = 0; it < sizeof(data); ++it)
-                    this->push_back(*(dataptr+it));
-            }
-            #endif
-
-            // make no-op 
-            inline void write_byte() {}
-
-            template <typename T>
-            inline void write_byte(uint8_t byte)
-            {
-                this->write<uint8_t>(byte);
-            }
-            template <typename... Ts>
-            inline void write_byte(uint8_t byte, Ts... bytes)
-            {
-                this->write<uint8_t>(byte);
-                this->write_byte(bytes...);
-            }
-
-
-            /** 
-             * @brief Write series of bytes into the buffer
-             * 
-             * @param bytes  bytes to be written
-             */
-            template <typename... Ts>
-            inline void write_bytes(Ts... bytes)
-            {
-                this->reserve(this->size() + sizeof...(bytes));
-                this->write_byte(bytes...);
-            }
-
-            //! return the position of read_ptr
-            inline size_t pos() const
-            {
-                return read_ptr;
-            }
-
-            //! move the read_ptr
-            inline void seek(size_t target) const
-            {
-                if (target < size()) read_ptr = target;
-            }
+        Buffer rval;
+        uint8_t v;
+        while(read_ptr < size())
+        {
+            v = this->at(read_ptr);
+            rval.emplace_back(v);
+            read_ptr++;
+            if (delim == v)
+                break;
+        }
+        return rval;
     };
+    
+    /** 
+     * @brief Read data from a buffer into a new buffer
+     * 
+     * @param len Number of bytes to be read
+     * 
+     * @return A new buffer containing len bytes of data.
+     */
+    inline Buffer Buffer::copy_bytes(size_t len) const
+    {
+        Buffer rval;
+        if (size() - read_ptr < len)
+            return rval;
+
+        std::copy(data(), data() + len, back_inserter(rval));
+        read_ptr += len;
+
+        return rval;
+    }
+
+    /** 
+     * @brief Convert from stl type to a buffer
+     *
+     * Takes a stl type and replaces contents of the buffer with the
+     * contents of the type.  Mostly useful for std::string
+     * 
+     * @param s  input.
+     *
+     */
+    template <typename T>
+    inline void Buffer::from_stl_type(T&& s)
+    {
+        this->clear();
+        std::copy(s.begin(), s.end(), back_inserter(*this));
+    }
+
+    /** 
+     * @brief Checks if there are still enough data remaining that can be read
+     * 
+     * @param bytes  How many bytes need still to be read
+     * 
+     * @return true if size of the buffer is large enough for s bytes of data to be read, otherwise false
+     */
+    inline bool Buffer::can_read(size_t bytes) const noexcept
+    {
+        if (size() < pos() + bytes)
+            return false;
+
+        return true;
+    };
+
+    /** 
+     * @brief Read a string that represents an integer
+     * 
+     * @return Integer of requested type represented by the text data read
+     *
+     */
+    template <typename T>
+    inline T Buffer::read_strval() const
+    {
+        size_t search, start;
+        uint8_t v;
+
+        for (search = read_ptr; search < size(); ++search)
+        {
+            if ((v != '0') && (v <= '9'))
+                continue;
+            break;
+        }
+
+        std::cout << "s: " << read_ptr << ", f:" << search << "\n";
+
+        char val[search - read_ptr];
+
+        start = read_ptr;
+        while (read_ptr < search)
+        {
+            v = this->at(read_ptr);
+            std::cout << v << "\n";
+            std::cout << "write_pos:" << read_ptr - start << "\n";
+            val[read_ptr - start] = v;
+            if ((v >= '0') && (v <= '9'))
+            {
+                read_ptr++;
+                continue;
+            }
+            break;
+        }
+        return atoi(val);
+    }
+            
+    /** 
+     * @brief Replace data in a buffer
+     * 
+     * @param loc   where in buffer the replaced data starts
+     * @param len   how many bytes of the data will be replaced
+     * @param src   source data buffer
+     */
+    inline void Buffer::replace(size_t loc, size_t len, const Buffer& src) noexcept
+    {
+        // make sure the buffer is large enough
+        if (size() - loc < len)
+            resize(loc + len);
+
+        // do not read more than we can
+        if (src.size() > len)
+            len = src.size();
+
+        memcpy(data() + loc, src.data(), len);
+    }
+
+    /** 
+     * @brief Read data of type T from the buffer
+     * 
+     * @param where the position where to read, if omitted, read_ptr is used as the position
+     * 
+     * @return Data read as type T.
+     */
+    template <typename T>
+    inline T Buffer::read(size_t where, bool big_endian_mode) const noexcept
+    {
+        if (where == MUSH_DEFAULT_LOC)
+            where = read_ptr;
+
+        T rval = *(T*)&(this->at(where));
+
+        if constexpr (std::is_pod<T>::value)
+            if ((big_endian() && !big_endian_mode) || (!big_endian() && big_endian_mode))
+                rval = endian_swap(rval);
+
+        read_ptr += sizeof(T);
+
+        return rval;
+    }
+
+    template <typename T>
+    inline T Buffer::read_le(size_t where) const noexcept
+    {
+        return read<T>(where, true);
+    }
+            
+    /** 
+     * @brief Write data of type T to the end of the buffer
+     * 
+     * @param data  data to be written into the buffer
+     */
+    template <typename T>
+    inline void Buffer::write(T&& data, bool big_endian_mode) noexcept
+    {
+        if constexpr(std::is_pod<T>::value)
+        {
+            this->reserve(this->size() + sizeof(data));
+
+            uint8_t* dataptr = nullptr;
+
+            if ((big_endian() && !big_endian_mode) || (!big_endian() && big_endian_mode))
+            {
+                T data_copy = endian_swap(std::forward<T>(data));
+                dataptr = (uint8_t*)&data_copy;
+                for (size_t it = 0; it < sizeof(data_copy); ++it)
+                    this->push_back(*(dataptr+it));
+                return;
+            } else {
+                dataptr = (uint8_t*)&data;
+            }
+
+            for (size_t it = 0; it < sizeof(data); ++it)
+                this->push_back(*(dataptr+it));
+
+        } else {
+            size_t start = size();
+            this->resize(size() + sizeof(T));
+            memcpy(this->data() + start, &data, sizeof(T)); 
+        }
+    }
+    
+    // Template specialisation for buffer writing
+    template<>
+    inline void Buffer::write(const Buffer& buf, bool big_endian_mode)
+    {
+        this->insert(std::end(*this), std::begin(buf), std::end(buf));
+    }
+
+    template <typename T>
+    inline void Buffer::write_le(T&& data) noexcept
+    {
+        write(std::forward<T>(data), true);
+    }
+
+    /** 
+     * @brief Write series of bytes into the buffer
+     * 
+     * @param bytes  bytes to be written
+     */
+    template <typename... Ts>
+    inline void Buffer::write_bytes_impl(uint8_t byte, Ts... bytes) noexcept
+    {
+        write<uint8_t>(std::move(byte));
+        if constexpr (sizeof...(bytes) > 0)
+            write_bytes_impl(bytes...);
+    }
+    
+    template <typename... Ts>
+    inline void Buffer::write_bytes(Ts... bytes) noexcept
+    {
+        this->reserve(this->size() + sizeof...(bytes));
+        this->write_bytes_impl(bytes...);
+    }
+
+    // HELPER STUFF IMPLEMENTATIONS
 
     /** 
      * @brief Read a complete file from the filesystem into the buffer
@@ -389,7 +369,7 @@ namespace mush
      * 
      * @return Buffer containing the contents of the file
      */
-    inline Buffer file_to_buffer(const std::string& filename)
+    inline Buffer file_to_buffer(const char* filename)
     {
         Buffer rval;
         std::ifstream input(filename, std::ifstream::binary);
@@ -407,18 +387,7 @@ namespace mush
 
         return rval;
     }
-
-    /** 
-     * @brief Write a buffer into the buffer
-     * 
-     * @param buf   the buffer to be appended
-     */
-    template<>
-    inline void Buffer::write(const Buffer& buf)
-    {
-        this->insert(std::end(*this), std::begin(buf), std::end(buf));
-    }
-
+    
     namespace hashes
     {
         // This voodoo is to find out whether size_t is 8 or 4 bytes long, it could be
@@ -494,6 +463,7 @@ inline size_t mush::Buffer::hash() const noexcept
     return rval_hash(*this);
 }
 
+// Extend std::hash with our buffer type
 namespace std
 {
     template<>
@@ -507,25 +477,3 @@ namespace std
 }
 
 #endif
-
-/*
- Copyright (c) 2017 Jari Ronkainen
-
-    This software is provided 'as-is', without any express or implied warranty.
-    In no event will the authors be held liable for any damages arising from the
-    use of this software.
-
-    Permission is granted to anyone to use this software for any purpose, including
-    commercial applications, and to alter it and redistribute it freely, subject to
-    the following restrictions:
-
-    1. The origin of this software must not be misrepresented; you must not claim
-       that you wrote the original software. If you use this software in a product,
-       an acknowledgment in the product documentation would be appreciated but is
-       not required.
-
-    2. Altered source versions must be plainly marked as such, and must not be
-       misrepresented as being the original software.
-
-    3. This notice may not be removed or altered from any source distribution.
-*/
