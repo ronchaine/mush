@@ -51,12 +51,12 @@ namespace mush
 
     //! Point in 3D-space
     template <typename T = int32_t>
-    class Point : public std::tuple<T, T, T>
+    class Point3D : public std::tuple<T, T, T>
     {
         public:
             using std::tuple<T,T,T>::tuple;
 
-            Point<T> operator+(std::tuple<T,T,T> other) const
+            Point3D<T> operator+(std::tuple<T,T,T> other) const
             {
                 T a = std::get<0>(*this) + std::get<0>(other);
                 T b = std::get<1>(*this) + std::get<1>(other);
@@ -65,7 +65,7 @@ namespace mush
                 return std::make_tuple(a,b,c);
             }
 
-            Point<T> operator-(std::tuple<T,T,T> other) const
+            Point3D<T> operator-(std::tuple<T,T,T> other) const
             {
                 T a = std::get<0>(*this) - std::get<0>(other);
                 T b = std::get<1>(*this) - std::get<1>(other);
@@ -74,7 +74,7 @@ namespace mush
                 return std::make_tuple(a,b,c);
             }
 
-            Point<T> operator*(std::tuple<T,T,T> other) const
+            Point3D<T> operator*(std::tuple<T,T,T> other) const
             {
                 T a = std::get<0>(*this) * std::get<0>(other);
                 T b = std::get<1>(*this) * std::get<1>(other);
@@ -83,7 +83,7 @@ namespace mush
                 return std::make_tuple(a,b,c);
             }
             
-            Point<T> operator/(std::tuple<T,T,T> other) const
+            Point3D<T> operator/(std::tuple<T,T,T> other) const
             {
                 T a = std::get<0>(*this) / std::get<0>(other);
                 T b = std::get<1>(*this) / std::get<1>(other);
@@ -275,10 +275,10 @@ namespace mush
     { static constexpr bool value = std::is_base_of_v<Physical_Shape, T>; };
 
     // point is kinda shape
-    template <typename T> struct is_shape<Point<T>> { static constexpr bool value = true; };
-    template <typename T> struct is_shape<const Point<T>> { static constexpr bool value = true; };
-    template <typename T> struct is_shape<Point<T>&> { static constexpr bool value = true; };
-    template <typename T> struct is_shape<const Point<T>&> { static constexpr bool value = true; };
+    template <typename T> struct is_shape<Point3D<T>> { static constexpr bool value = true; };
+    template <typename T> struct is_shape<const Point3D<T>> { static constexpr bool value = true; };
+    template <typename T> struct is_shape<Point3D<T>&> { static constexpr bool value = true; };
+    template <typename T> struct is_shape<const Point3D<T>&> { static constexpr bool value = true; };
 
     // rectangles are shapes
     template <> struct is_shape<Rectangle> { static constexpr bool value = true;  };
@@ -287,7 +287,11 @@ namespace mush
     template <> struct is_shape<const Rectangle&> { static constexpr bool value = true;  };
 
     // concept for shapes
+    #ifndef NO_CONCEPTS
     template <typename T> concept bool Shape = is_shape<T>::value;
+    #else
+    #define Shape typename
+    #endif
 
     // ----------------------------------------
     //            OVERLAP TESTS
