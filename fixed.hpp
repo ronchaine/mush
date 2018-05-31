@@ -2,11 +2,9 @@
  * \file fixed.hpp
  * \brief Fixed point type
  * \author Jari Ronkainen
- * \version 1.0.1
+ * \version 1.0.2
  *
  * Adds fixed point arithmetic type compatible with STL functions
- *
- * Depends on concepts.hpp
  *
  */
 #ifndef MUSH_FIXED_POINT
@@ -17,7 +15,24 @@
 
 #include <type_traits>
 
+
+#ifdef NO_CONCEPTS
+#define SuitableBaseType typename
+#define ArithmeticType typename
+#ifndef MUSH_DEPENDENT_FALSE
+#define MUSH_DEPENDENT_FALSE
+namespace mush
+{
+    template<typename T> struct dependent_false
+    {
+        constexpr static bool value = false;
+        constexpr bool operator()() { return false; }
+    };
+}
+#endif
+#else
 #include "core.hpp"
+#endif
 
 namespace mush
 {
@@ -33,17 +48,30 @@ namespace mush
             // Constructors
             Fixed() : value(0) {}
             Fixed(const Fixed& other) : value(other.value) {}
- 
+
+            #ifndef NO_CONCEPTS
             template <ArithmeticType T>
             Fixed(T other) : value(other * (1 << Precision)) {}
-
 
             // Basic conversions
             template <IntegralType T>       operator T() { return (T)(value >> Precision); }
             template <FloatingPointType T>  operator T() { return (T)((T)value) / (1 << Precision); }
-
+            
             template <IntegralType T>       operator T() const { return (T)(value >> Precision); }
             template <FloatingPointType T>  operator T() const { return (T)((T)value) / (1 << Precision); }
+            #else
+
+            // Use this untested horror if no concepts are available
+            template <typename T, typename std::enable_if_t<std::is_arithmetic<T>::value> = 0> operator T() const
+            {
+                if constexpr(std::is_integral<T>::value)
+                    return (T)(value >> Precision);
+                else if constexpr(std::is_floating_point<T>::value)
+                    return (T)((T)value) / (1 << Precision);
+                else 
+                    static_assert(dependent_false<T>(), "Unknown arithmetic type for fixed point conversion");
+            }
+            #endif
 
             // Conversions between Fixeds
             template <uint32_t P, SuitableBaseType T>
@@ -163,7 +191,7 @@ namespace mush
 
 namespace std
 {
-    template <uint32_t Precision, mush::SuitableBaseType Basetype>
+    template <uint32_t Precision, typename Basetype>
     struct is_arithmetic<mush::Fixed<Precision, Basetype>>
     {
         constexpr static bool value = true;
@@ -174,6 +202,11 @@ namespace std
         }
     };
 }
+
+#ifdef NO_CONCEPTS
+#undef SuitableBaseType
+#undef ArithmeticType
+#endif
 
 #endif
 /*

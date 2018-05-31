@@ -537,8 +537,10 @@ namespace mush
     template <typename T> struct remove_cr<const T&&>   { typedef T type; };
     #endif
 
+    #ifndef NO_CONCEPTS
     template <typename T>
     concept bool AnyString = std::is_same<typename remove_cr<T>::type, mush::String>::value;
+    #endif
 
     // compares a character to number of other characters
     inline bool match_char32(char32_t c, const String& chars)
