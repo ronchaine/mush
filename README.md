@@ -14,7 +14,6 @@ you're good with a compiler that can do C++17 and pass -DNO_CONCEPTS.
 
 ## ToDo before calling 1.0 done
 * Document all files, generate doxygen use guide
-* Remove "WIP" files from release
 * More testing
 
 ## Licence
