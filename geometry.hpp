@@ -177,7 +177,7 @@ namespace mush
     {
         Triangle()
         {
-            *this.triangles[0] = {0, 1, 2};
+            (*this).triangles[0] = {0, 1, 2};
         }
     };
 
@@ -191,8 +191,8 @@ namespace mush
 
         Quad()
         {
-            *this.triangles[0] = {TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT};
-            *this.triangles[1] = {BOTTOM_RIGHT, BOTTOM_LEFT, TOP_RIGHT};
+            (*this).triangles[0] = {TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT};
+            (*this).triangles[1] = {BOTTOM_RIGHT, BOTTOM_LEFT, TOP_RIGHT};
         }
 
         Quad(Vertex_Type tl,
@@ -200,10 +200,10 @@ namespace mush
              Vertex_Type bl,
              Vertex_Type br) : Quad()
         {
-            *this.vertices[0] = tl;
-            *this.vertices[1] = tr;
-            *this.vertices[2] = bl;
-            *this.vertices[3] = br;
+            (*this).vertices[0] = tl;
+            (*this).vertices[1] = tr;
+            (*this).vertices[2] = bl;
+            (*this).vertices[3] = br;
         }
     };
 
@@ -225,23 +225,23 @@ namespace mush
         {
             // *this is required because we're inheriting from a template
             // top face
-            *this.triangles[0] = {FRONT_TOP_LEFT, FRONT_TOP_RIGHT, BACK_TOP_LEFT};
-            *this.triangles[1] = {BACK_TOP_LEFT, FRONT_TOP_RIGHT, BACK_TOP_RIGHT};
+            (*this).triangles[0] = {FRONT_TOP_LEFT, FRONT_TOP_RIGHT, BACK_TOP_LEFT};
+            (*this).triangles[1] = {BACK_TOP_LEFT, FRONT_TOP_RIGHT, BACK_TOP_RIGHT};
             // front face
-            *this.triangles[2] = {FRONT_BOTTOM_LEFT, FRONT_TOP_RIGHT, FRONT_TOP_LEFT};
-            *this.triangles[3] = {FRONT_BOTTOM_LEFT, FRONT_BOTTOM_RIGHT, FRONT_TOP_RIGHT};
+            (*this).triangles[2] = {FRONT_BOTTOM_LEFT, FRONT_TOP_RIGHT, FRONT_TOP_LEFT};
+            (*this).triangles[3] = {FRONT_BOTTOM_LEFT, FRONT_BOTTOM_RIGHT, FRONT_TOP_RIGHT};
             // left face
-            *this.triangles[4] = {BACK_BOTTOM_LEFT, FRONT_TOP_LEFT, BACK_TOP_LEFT};
-            *this.triangles[5] = {BACK_BOTTOM_LEFT, FRONT_BOTTOM_LEFT, FRONT_TOP_LEFT};
+            (*this).triangles[4] = {BACK_BOTTOM_LEFT, FRONT_TOP_LEFT, BACK_TOP_LEFT};
+            (*this).triangles[5] = {BACK_BOTTOM_LEFT, FRONT_BOTTOM_LEFT, FRONT_TOP_LEFT};
             // bottom face
-            *this.triangles[6] = {FRONT_BOTTOM_RIGHT, FRONT_BOTTOM_LEFT, BACK_BOTTOM_LEFT};
-            *this.triangles[7] = {FRONT_BOTTOM_RIGHT, BACK_BOTTOM_LEFT, BACK_BOTTOM_RIGHT};
+            (*this).triangles[6] = {FRONT_BOTTOM_RIGHT, FRONT_BOTTOM_LEFT, BACK_BOTTOM_LEFT};
+            (*this).triangles[7] = {FRONT_BOTTOM_RIGHT, BACK_BOTTOM_LEFT, BACK_BOTTOM_RIGHT};
             // back face
-            *this.triangles[8] = {BACK_TOP_LEFT, BACK_TOP_RIGHT, BACK_BOTTOM_RIGHT};
-            *this.triangles[9] = {BACK_TOP_LEFT, BACK_BOTTOM_LEFT, BACK_BOTTOM_RIGHT};
+            (*this).triangles[8] = {BACK_TOP_LEFT, BACK_TOP_RIGHT, BACK_BOTTOM_RIGHT};
+            (*this).triangles[9] = {BACK_TOP_LEFT, BACK_BOTTOM_LEFT, BACK_BOTTOM_RIGHT};
             // right face
-            *this.triangles[10] = {BACK_BOTTOM_RIGHT, BACK_TOP_RIGHT, FRONT_TOP_RIGHT};
-            *this.triangles[11] = {BACK_BOTTOM_RIGHT, FRONT_TOP_RIGHT, FRONT_BOTTOM_RIGHT};
+            (*this).triangles[10] = {BACK_BOTTOM_RIGHT, BACK_TOP_RIGHT, FRONT_TOP_RIGHT};
+            (*this).triangles[11] = {BACK_BOTTOM_RIGHT, FRONT_TOP_RIGHT, FRONT_BOTTOM_RIGHT};
         }
 
         constexpr Box(Vertex_Type ftl,
@@ -253,26 +253,29 @@ namespace mush
             Vertex_Type bbl,
             Vertex_Type bbr) : Box()
         {
-            *this.vertices[FRONT_TOP_LEFT]      = ftl;
-            *this.vertices[FRONT_TOP_RIGHT]     = ftr;
-            *this.vertices[FRONT_BOTTOM_LEFT]   = fbl;
-            *this.vertices[FRONT_BOTTOM_RIGHT]  = fbr;
-            *this.vertices[BACK_TOP_LEFT]       = btl;
-            *this.vertices[BACK_TOP_RIGHT]      = btr;
-            *this.vertices[BACK_BOTTOM_LEFT]    = bbl;
-            *this.vertices[BACK_BOTTOM_RIGHT]   = bbr;
+            (*this).vertices[FRONT_TOP_LEFT]      = ftl;
+            (*this).vertices[FRONT_TOP_RIGHT]     = ftr;
+            (*this).vertices[FRONT_BOTTOM_LEFT]   = fbl;
+            (*this).vertices[FRONT_BOTTOM_RIGHT]  = fbr;
+            (*this).vertices[BACK_TOP_LEFT]       = btl;
+            (*this).vertices[BACK_TOP_RIGHT]      = btr;
+            (*this).vertices[BACK_BOTTOM_LEFT]    = bbl;
+            (*this).vertices[BACK_BOTTOM_RIGHT]   = bbr;
         }
 
         constexpr Box(Vertex_Type first_corner, Vertex_Type second_corner)
         {
-            *this.vertices[FRONT_TOP_LEFT] = first_corner;
-            *this.vertices[BACK_BOTTOM_RIGHT] = second_corner;
+            (*this).vertices[FRONT_TOP_LEFT] = first_corner;
+            (*this).vertices[BACK_BOTTOM_RIGHT] = second_corner;
         }
     };
 
     // type traits, for starters, anything descended from Physical_Shape is a shape
     template <typename T> struct is_shape
-    { static constexpr bool value = std::is_base_of_v<Physical_Shape, T>; };
+    {
+        template <uint32_t VC, uint32_t TC, typename VT>
+        static constexpr bool value = std::is_base_of_v<Physical_Shape<VC,TC,VT>, T>;
+    };
 
     // point is kinda shape
     template <typename T> struct is_shape<Point3D<T>> { static constexpr bool value = true; };
@@ -286,19 +289,12 @@ namespace mush
     template <> struct is_shape<const Rectangle> { static constexpr bool value = true;  };
     template <> struct is_shape<const Rectangle&> { static constexpr bool value = true;  };
 
-    // concept for shapes
-    #ifndef NO_CONCEPTS
-    template <typename T> concept bool Shape = is_shape<T>::value;
-    #else
-    #define Shape typename
-    #endif
-
     // ----------------------------------------
     //            OVERLAP TESTS
     // ----------------------------------------
 
     // make compile-time error if trying to use nonexistant overlap test
-    template<Shape First, Shape Second>
+    template<typename First, typename Second>
     inline bool overlap(First shape, Second shape2)
     {
         static_assert(dependent_false<First>(), "overlap check for shapes requested not implemented");
@@ -330,7 +326,7 @@ namespace mush
     // ----------------------------------------
 
     // make compile-time error if trying to use nonexistant containment test
-    template<Shape First, Shape Second>
+    template<typename First, typename Second>
     inline bool contains(First shape, Second shape2)
     {
         static_assert(dependent_false<First>(), "containment check for shapes requested not implemented");

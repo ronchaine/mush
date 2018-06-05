@@ -329,7 +329,7 @@ namespace mush
     
     // Template specialisation for buffer writing
     template<>
-    inline void Buffer::write(const Buffer& buf, bool big_endian_mode)
+    inline void Buffer::write(const Buffer& buf, bool big_endian_mode) noexcept
     {
         this->insert(std::end(*this), std::begin(buf), std::end(buf));
     }

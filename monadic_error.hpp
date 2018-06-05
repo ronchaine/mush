@@ -4,6 +4,7 @@
 #include <utility>
 #include <functional>
 #include <new>
+#include <string>
 
 namespace mush
 {
