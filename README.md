@@ -18,6 +18,10 @@ For everything to work, requires compiler that handles both C++ concepts TS and
 C++17, currently, that means g++ 7.0 or newer.  For almost everything to work,
 you're good with a compiler that can do C++17 and pass -DNO_CONCEPTS.
 
+Should also work with clang++ and libc++ from 6.0.0 onward if you disable
+concepts.  Once clang (or gcc) implements C++20 concepts instead of the TS,
+there will be a move to those.
+
 ## Roadmap
 * Document all files, generate doxygen use guide (past due)
 * More testing
