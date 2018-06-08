@@ -221,16 +221,12 @@ namespace mush
             break;
         }
 
-        std::cout << "s: " << read_ptr << ", f:" << search << "\n";
-
         char val[search - read_ptr];
 
         start = read_ptr;
         while (read_ptr < search)
         {
             v = this->at(read_ptr);
-            std::cout << v << "\n";
-            std::cout << "write_pos:" << read_ptr - start << "\n";
             val[read_ptr - start] = v;
             if ((v >= '0') && (v <= '9'))
             {
