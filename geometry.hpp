@@ -274,7 +274,7 @@ namespace mush
     template <typename T> struct is_shape
     {
         template <uint32_t VC, uint32_t TC, typename VT>
-        static constexpr bool value = std::is_base_of_v<Physical_Shape<VC,TC,VT>, T>;
+        static constexpr bool value = std::is_base_of<Physical_Shape<VC,TC,VT>, T>::value;
     };
 
     // point is kinda shape
