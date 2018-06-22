@@ -288,6 +288,11 @@ namespace mush
     template <> struct is_shape<Rectangle&> { static constexpr bool value = true;  };
     template <> struct is_shape<const Rectangle> { static constexpr bool value = true;  };
     template <> struct is_shape<const Rectangle&> { static constexpr bool value = true;  };
+    
+    #ifndef NO_CONCEPTS
+    template <typename T>
+    concept bool Shape = is_shape<T>::value;
+    #endif
 
     // ----------------------------------------
     //            OVERLAP TESTS

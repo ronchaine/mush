@@ -27,6 +27,8 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include <iostream>
+
 #include "core.hpp"
 #include "string.hpp"
 #include "buffer.hpp"
@@ -312,7 +314,7 @@ namespace mush
     //FT_Face Freetype_Basis::face;
 
     template <ColourFormat Fmt = RGBA>
-    static mush::Font<Fmt, FREETYPE_FONT> load_freetype(const mush::String& file, uint32_t size)
+    static mush::Font<Fmt, FREETYPE_FONT> load_freetype(const char* file, uint32_t size)
     {
         return mush::Font<Fmt, FREETYPE_FONT>(file, size, file_to_buffer(file), "1234567890AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzÅåÄäÖö.,:;-+=?!_*\"$£€<>()'\\");
     }

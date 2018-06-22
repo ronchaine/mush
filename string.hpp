@@ -189,13 +189,15 @@ namespace mush
                 }
             }
 
-            String(IntegerType value)
+            template <typename T, typename std::enable_if<std::is_integral<T>::value>::type = 0>
+            String(T value)
             {
                 std::string result = std::to_string(value);
                 *this = String(result);
             }
 
-            String(FloatingType value)
+            template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type = 0>
+            String(T value)
             {
                 std::string result = std::to_string(value);
                 *this = String(result);
@@ -386,10 +388,10 @@ namespace mush
                 return rval;
             }
 
-            template <IntegerType T>
+            template <typename T, typename std::enable_if<std::is_integral<T>::value>::type = 0>
             T to_value() const { return strtol(std_str().c_str(), nullptr, 0); }
 
-            template <FloatingType T>
+            template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type = 0>
             T to_value() const { return atof(std_str().c_str()); }
             //! Generate substring
             /*!
