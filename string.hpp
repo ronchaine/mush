@@ -388,11 +388,19 @@ namespace mush
                 return rval;
             }
 
-            template <typename T, typename std::enable_if<std::is_integral<T>::value>::type = 0>
-            T to_value() const { return strtol(std_str().c_str(), nullptr, 0); }
+            template <typename T>
+            T to_value() const
+            {
+                if constexpr (std::is_integral<T>::value)
+                    return strtol(std_str().c_str(), nullptr, 0);
+                else if constexpr (std::is_floating_point<T>::value)
+                    return atof(std_str().c_str());
+                else
+                {
+                    static_assert(dependent_false<T>(), "invalid type template argument to to_value()");
+                }
+            }
 
-            template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type = 0>
-            T to_value() const { return atof(std_str().c_str()); }
             //! Generate substring
             /*!
                 Returns a newly constructed string object with its value initialised to
