@@ -6,16 +6,16 @@
  * @date 2017-08-22
  *
  * Font class acts as a way to read font data from a file and retrieve glyph data as bitmap
- * and metrics.  Supports Freetype Fonts if MUSH_FREETYPE_FONTS is defined and bitmap fonts
- * if MUSH_BITMAP_FONTS is defined before including the file.
+ * and metrics.  Supports Freetype Fonts if MUSH_DISABLE_FREETYPE_FONTS is not defined and
+ * bitmap fonts if MUSH_DISABLE_BITMAP_FONTS is defined before including the file.
  *
- * Defining MUSH_FREETYPE_FONTS requires FreeType2
- * Defining MUSH_BITMAP_FONTS requires stb_image
+ * Using freetype fonts requires FreeType2
+ * Using bitmap fonts requires stb_image
  */
 #ifndef MUSH_FONT_HEADER
 #define MUSH_FONT_HEADER
 
-#ifdef MUSH_FREETYPE_FONTS
+#ifndef MUSH_DISABLE_FREETYPE_FONTS
     #include <ft2build.h>
     #include FT_FREETYPE_H
     #include FT_LCD_FILTER_H
@@ -76,7 +76,7 @@ namespace mush
 
     struct Freetype_Basis
     {
-        #ifdef MUSH_FREETYPE_FONTS
+        #ifndef MUSH_DISABLE_FREETYPE_FONTS
             static FT_Library library;
             static uint32_t l_count;
         #endif
@@ -96,7 +96,7 @@ namespace mush
             int32_t             space_length;
             const uint32_t      pixel_size;
         
-            #ifdef MUSH_FREETYPE_FONTS
+            #ifndef MUSH_DISABLE_FREETYPE_FONTS
                  FT_Face        face;
             #endif
 
@@ -112,7 +112,7 @@ namespace mush
                 // Freetype Font specific
                 if constexpr(T == FREETYPE_FONT)
                 {
-                    #ifdef MUSH_FREETYPE_FONTS
+                    #ifndef MUSH_DISABLE_FREETYPE_FONTS
                     prefix = "freetype/" + in_prefix + "/" + in_size + "/";
 
                     if (l_count == 0) if (FT_Init_FreeType(&library))
@@ -141,7 +141,7 @@ namespace mush
 
                 // Bitmap font specific
                 else if constexpr (T == BITMAP_FONT)
-                    #ifdef MUSH_FREETYPE_FONTS
+                    #ifndef MUSH_DISABLE_BITMAP_FONTS
                     prefix = "bitmap/" + in_prefix + "/" + in_size;
                     #else
                     static_assert(dependent_false<decltype(T)>(), "Bitmap fonts not available, define MUSH_BITMAP_FONTS?");
@@ -154,7 +154,7 @@ namespace mush
             {
                 if constexpr (T == FREETYPE_FONT)
                 {
-                    #ifdef MUSH_FREETYPE_FONTS
+                    #ifndef MUSH_DISABLE_FREETYPE_FONTS
                     FT_Done_Face(face);
                     l_count--;
 
@@ -178,7 +178,7 @@ namespace mush
             {
                 if constexpr(T == FREETYPE_FONT)
                 {
-                    #ifdef MUSH_FREETYPE_FONTS
+                    #ifndef MUSH_DISABLE_FREETYPE_FONTS
                     if (!face)
                     {
                         std::cout << "Truetype font has no face\n";
@@ -308,7 +308,7 @@ namespace mush
             }
 
     };
-    #ifdef MUSH_FREETYPE_FONTS
+    #ifndef MUSH_DISABLE_FREETYPE_FONTS
     FT_Library Freetype_Basis::library;
     uint32_t Freetype_Basis::l_count;
     //FT_Face Freetype_Basis::face;
@@ -323,7 +323,7 @@ namespace mush
 
 #endif
 /*
- Copyright (c) 2017 Jari Ronkainen
+ Copyright (c) 2018 Jari Ronkainen
 
     This software is provided 'as-is', without any express or implied warranty.
     In no event will the authors be held liable for any damages arising from the
